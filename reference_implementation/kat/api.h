@@ -14,7 +14,6 @@
 #define CRYPTO_KEM_SECRETKEYBYTES KEM_SECRETKEY_BYTES
 #define CRYPTO_CIPHERTEXTBYTES CIPHERTEXT_BYTES
 
-
 // For KEM
 int kat_crypto_kem_keypair(unsigned char *pk, unsigned char *sk);
 

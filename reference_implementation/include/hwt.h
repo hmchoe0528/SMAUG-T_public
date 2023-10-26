@@ -8,7 +8,7 @@
 #include "fips202.h"
 #include "parameters.h"
 
-void hwt(uint8_t *res, const uint8_t *input, const size_t input_size,
-         const uint16_t hmwt);
+void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
+         const size_t input_size, const uint16_t hmwt);
 
 #endif // SMAUG_HWT_H

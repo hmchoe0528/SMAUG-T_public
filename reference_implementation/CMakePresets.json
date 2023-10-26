@@ -1,0 +1,59 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "ci",
+            "inherits": "default"
+        },
+        {
+            "name": "clang-ci",
+            "inherits": "ci",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_C_COMPILER": "clang"
+            }
+        },
+        {
+            "name": "tidy-ci",
+            "displayName": "Config for clang-tidy",
+            "description": "Enable as much as possible so that clang-tidy catches the binary",
+            "inherits": [
+                "clang-ci"
+            ],
+            "cacheVariables": {
+                "ENABLE_CLANG_TIDY": "ON"
+            }
+        },
+        {
+            "name": "cppcheck-ci",
+            "displayName": "Config for cppcheck",
+            "description": "Enable as much as possible so that cppcheck catches the binary",
+            "inherits": [
+                "ci"
+            ],
+            "cacheVariables": {
+                "ENABLE_CPPCHECK": "ON"
+            }
+        }
+    ]
+}

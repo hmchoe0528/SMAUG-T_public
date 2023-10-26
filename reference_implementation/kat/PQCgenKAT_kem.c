@@ -27,13 +27,13 @@ int main(int argc, const char **argv) {
     unsigned char pk[CRYPTO_PUBLICKEYBYTES], sk[CRYPTO_KEM_SECRETKEYBYTES];
     int ret_val;
 
-    sprintf(fn_rsp, "PQCkemKAT_%lu.rsp", CRYPTO_KEM_SECRETKEYBYTES);
+    sprintf(fn_rsp, "PQCkemKAT_%u.rsp", CRYPTO_KEM_SECRETKEYBYTES);
     if ((fp_rsp = fopen(fn_rsp, "w")) == NULL) {
         printf("Couldn't open <%s> for write\n", fn_rsp);
         return KAT_FILE_OPEN_ERROR;
     }
 
-    sprintf(fn_req, "PQCkemKAT_%lu.req", CRYPTO_KEM_SECRETKEYBYTES);
+    sprintf(fn_req, "PQCkemKAT_%u.req", CRYPTO_KEM_SECRETKEYBYTES);
     if (argc == 1 || strcmp("--disable-seed-gen", argv[1]) != 0) {
         // Create the REQUEST file
         if ((fp_req = fopen(fn_req, "w")) == NULL) {

@@ -201,10 +201,10 @@ int addGaussianError(uint16_t *op, const size_t length, const uint8_t *seed) {
 
 void addGaussianErrorVec(uint16_t op[MODULE_RANK][LWE_N], const uint8_t *seed) {
     uint8_t seed_tmp[CRYPTO_BYTES + sizeof(size_t)] = {0};
-    memcpy(seed_tmp, seed, CRYPTO_BYTES);
+    cmov(seed_tmp, seed, CRYPTO_BYTES, 1);
     for (size_t i = 0; i < MODULE_RANK; ++i) {
         size_t nonce = MODULE_RANK * i;
-        memcpy(seed_tmp + CRYPTO_BYTES, &nonce, sizeof(size_t));
+        cmov(seed_tmp + CRYPTO_BYTES, (uint8_t *)&nonce, sizeof(size_t), 1);
         addGaussianError(op[i], LWE_N, seed_tmp);
     }
 }

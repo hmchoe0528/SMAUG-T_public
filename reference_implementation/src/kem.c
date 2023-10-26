@@ -1,30 +1,6 @@
 #include "kem.h"
 
 /*************************************************
- * Name:        KDF
- *
- * Description: Derive a shared secret for given ciphertext and delta.
- *
- * Arguments:   - unsigned char *res: pointer to output shared secret
- *                (an already allocated array of CRYPTO_BYTES bytes)
- *              - ciphertext *ctxt: pointer to input, packed ciphertext
- *              - uint8_t *delta: pointer to input random delta
- *                (an already allocated array of delta_size bytes)
- *              - size_t delta_size: length of input delta
- **************************************************/
-int KDF(unsigned char *res, const uint8_t *ctxt, const uint8_t *delta,
-        const size_t delta_size) {
-    const size_t input_size = delta_size + SHA3_256_HashSize;
-    uint8_t input[input_size];
-
-    memcpy(input, delta, DELTA_BYTES);
-    hash_h(input + DELTA_BYTES, ctxt, CIPHERTEXT_BYTES);
-
-    shake256(res, CRYPTO_BYTES, input, input_size);
-    return 0;
-}
-
-/*************************************************
  * Name:        crypto_kem_keypair
  *
  * Description: Generates public and private key
@@ -56,14 +32,16 @@ void crypto_kem_keypair(uint8_t *pk, uint8_t *sk) {
  * Returns 0(success) or 1(failure).
  **************************************************/
 int crypto_kem_encap(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
-    // Generate delta
-    uint8_t delta[DELTA_BYTES];
-    randombytes(delta, DELTA_BYTES);
+    uint8_t mu[DELTA_BYTES] = {0}; // shared secret and seed
+    uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0};
 
-    indcpa_enc(ctxt, pk, delta);
+    randombytes(mu, DELTA_BYTES);
+    hash_h(buf, pk, PUBLICKEY_BYTES);
+    hash_g(buf, DELTA_BYTES + CRYPTO_BYTES, mu, DELTA_BYTES, buf,
+           SHA3_256_HashSize);
 
-    if (KDF(ss, ctxt, delta, DELTA_BYTES))
-        return 1;
+    indcpa_enc(ctxt, pk, mu, buf);
+    cmov(ss, buf + DELTA_BYTES, CRYPTO_BYTES, 1);
 
     return 0;
 }
@@ -88,21 +66,27 @@ int crypto_kem_encap(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
  **************************************************/
 int crypto_kem_decap(uint8_t *ss, const uint8_t *sk, const uint8_t *pk,
                      const uint8_t *ctxt) {
-    uint8_t delta[DELTA_BYTES] = {0};
-    indcpa_dec(delta, sk, ctxt);
+    uint8_t mu[DELTA_BYTES] = {0}; // shared secret and seed
+    uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0};
+    uint8_t buf_tmp[DELTA_BYTES + CRYPTO_BYTES] = {0};
+    uint8_t hash_res[SHA3_256_HashSize] = {0};
+
+    indcpa_dec(mu, sk, ctxt);
+    hash_h(hash_res, pk, PUBLICKEY_BYTES);
+    hash_g(buf, DELTA_BYTES + CRYPTO_BYTES, mu, DELTA_BYTES, hash_res,
+           SHA3_256_HashSize);
 
     uint8_t ctxt_temp[CIPHERTEXT_BYTES] = {0};
-    indcpa_enc(ctxt_temp, pk, delta);
+    indcpa_enc(ctxt_temp, pk, mu, buf);
 
-    if ((memcmp(ctxt, ctxt_temp, CIPHERTEXT_BYTES))) {
-        printf("*** ERROR: Failed to recover ctxt\n");
-        KDF(ss, ctxt, sk + PKE_SECRETKEY_BYTES, T_BYTES);
-        return 1;
-    }
+    int fail = verify(ctxt, ctxt_temp, CIPHERTEXT_BYTES);
 
-    // Compute a shared secret key
-    if (KDF(ss, ctxt, delta, DELTA_BYTES))
-        return 1;
+    hash_h(hash_res, ctxt, CIPHERTEXT_BYTES);
+    hash_g(buf_tmp, DELTA_BYTES + CRYPTO_BYTES,
+           sk + 2 * MODULE_RANK + SKPOLYVEC_BYTES, T_BYTES, hash_res,
+           SHA3_256_HashSize);
 
+    cmov(buf + DELTA_BYTES, buf_tmp + DELTA_BYTES, CRYPTO_BYTES, fail);
+    cmov(ss, buf + DELTA_BYTES, CRYPTO_BYTES, 1);
     return 0;
 }

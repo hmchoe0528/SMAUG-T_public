@@ -1,4 +1,5 @@
 #include "hwt.h"
+#include <stdio.h>
 
 /*************************************************
  * Name:        hwt
@@ -12,85 +13,45 @@
  *              - uint8_t *input: pointer to input seed (of length input_size)
  *              - size_t input_size: length of input seed
  **************************************************/
-void hwt(uint8_t *res, const uint8_t *input, const size_t input_size,
-         const uint16_t hmwt) {
-    uint64_t *hash_t = NULL;
-    hash_t = (uint64_t *)calloc(LWE_N >> 6, sizeof(uint64_t));
+void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
+         const size_t input_size, const uint16_t hmwt) {
+    uint32_t i, pos = 0;
+    uint16_t deg_mask = 0, deg = 0;
+    uint16_t buf[SHAKE256_RATE / 2] = {0};
 
-    shake256((uint8_t *)hash_t, LWE_N >> 3, input, input_size);
+#if SMAUG_MODE == 1
+    deg_mask = 0x3ff;
+#elif SMAUG_MODE == 3
+    deg_mask = 0x7ff;
+#elif SMAUG_MODE == 5
+    deg_mask = 0xfff;
+#endif
 
-    uint16_t hw = 0;
-    uint16_t hash_idx = 0;
+    keccak_state state;
+    shake256_init(&state);
+    shake256_absorb_once(&state, input, input_size);
+    shake256_squeezeblocks((uint8_t *)buf, 1, &state);
 
-    do {
-        uint8_t degree = (uint8_t)hash_t[hash_idx];
+    for (i = 0; i < DIMENSION; ++i)
+        res[i] = 0;
 
-        if (res[degree] == 0) {
-            res[degree] = ((uint8_t)(hash_t[hash_idx] >> 8) & 0x02) - 1;
-            ++hw;
-            if (hw == hmwt) {
-                ++hash_idx;
-                break;
+    for (i = DIMENSION - hmwt; i < DIMENSION; ++i) {
+        do {
+            if (pos >= SHAKE256_RATE / 2) {
+                shake256_squeezeblocks((uint8_t *)buf, 1, &state);
+                pos = 0;
             }
-        }
 
-        degree = (uint8_t)(hash_t[hash_idx] >> 10);
-        if (res[degree] == 0) {
-            res[degree] = ((uint8_t)(hash_t[hash_idx] >> 18) & 0x02) - 1;
-            ++hw;
-            if (hw == hmwt) {
-                ++hash_idx;
-                break;
-            }
-        }
+            deg = buf[pos++] & deg_mask;
+        } while (deg > i);
 
-        degree = (uint8_t)(hash_t[hash_idx] >> 20);
-        if (res[degree] == 0) {
-            res[degree] = ((uint8_t)(hash_t[hash_idx] >> 28) & 0x02) - 1;
-            ++hw;
-            if (hw == hmwt) {
-                ++hash_idx;
-                break;
-            }
-        }
+        res[i] = res[deg];
+        res[deg] = ((buf[pos - 1] >> 14) & 0x02) - 1;
+    }
 
-        degree = (uint8_t)(hash_t[hash_idx] >> 30);
-        if (res[degree] == 0) {
-            res[degree] = ((uint8_t)(hash_t[hash_idx] >> 38) & 0x02) - 1;
-            ++hw;
-            if (hw == hmwt) {
-                ++hash_idx;
-                break;
-            }
-        }
-
-        degree = (uint8_t)(hash_t[hash_idx] >> 40);
-        if (res[degree] == 0) {
-            res[degree] = ((uint8_t)(hash_t[hash_idx] >> 48) & 0x02) - 1;
-            ++hw;
-            if (hw == hmwt) {
-                ++hash_idx;
-                break;
-            }
-        }
-
-        degree = (uint8_t)(hash_t[hash_idx] >> 50);
-        if (res[degree] == 0) {
-            res[degree] = ((uint8_t)(hash_t[hash_idx] >> 58) & 0x02) - 1;
-            ++hw;
-            if (hw == hmwt) {
-                ++hash_idx;
-                break;
-            }
-        }
-
-        ++hash_idx;
-
-        if (hash_idx == LWE_N / 64) {
-            hash_idx = 0;
-            shake256((uint8_t *)hash_t, LWE_N >> 3, (const uint8_t *)hash_t,
-                     LWE_N >> 3);
-        }
-    } while (hw < hmwt);
-    free(hash_t);
+    size_t cnt_arr_idx = 0;
+    for (i = 0; i < DIMENSION; ++i) {
+        cnt_arr_idx = ((i & 0x700) >> 8) & (-(res[i] & 0x01));
+        cnt_arr[cnt_arr_idx] += (res[i] & 0x01);
+    }
 }

@@ -15,10 +15,11 @@
  **************************************************/
 void computeC1(uint16_t c1[MODULE_RANK][LWE_N],
                const uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
-               const uint8_t r[MODULE_RANK][HR],
+               const uint8_t *r[MODULE_RANK],
+               const uint8_t r_cnt_arr[MODULE_RANK],
                const uint8_t r_neg_start[MODULE_RANK]) {
     // c1 = A * r
-    matrix_vec_mult_add(c1, A, r, HR, r_neg_start, 1);
+    matrix_vec_mult_add(c1, A, r, r_cnt_arr, r_neg_start, 1);
 
     // Rounding q to p
     for (size_t i = 0; i < MODULE_RANK; ++i) {
@@ -41,7 +42,8 @@ void computeC1(uint16_t c1[MODULE_RANK][LWE_N],
  **************************************************/
 void computeC2(uint16_t c2[LWE_N], const uint8_t delta[DELTA_BYTES],
                const uint16_t b[MODULE_RANK][LWE_N],
-               const uint8_t r[MODULE_RANK][HR],
+               const uint8_t *r[MODULE_RANK],
+               const uint8_t r_cnt_arr[MODULE_RANK],
                const uint8_t r_neg_start[MODULE_RANK]) {
     // c2 = q/2 * delta
     for (size_t i = 0; i < DELTA_BYTES; ++i) {
@@ -51,10 +53,10 @@ void computeC2(uint16_t c2[LWE_N], const uint8_t delta[DELTA_BYTES],
     }
 
     // c2 = q/2 * delta + (b * r)
-    vec_vec_mult_add(c2, b, r, HR, r_neg_start);
+    vec_vec_mult_add(c2, b, r, r_cnt_arr, r_neg_start);
 
-    // Rounding q to p
+    // Rounding q to p'
     for (uint16_t i = 0; i < LWE_N; ++i) {
-        c2[i] = ((c2[i] + RD_ADD) & RD_AND) >> _16_LOG_P;
+        c2[i] = ((c2[i] + RD_ADD2) & RD_AND2) >> _16_LOG_P2;
     }
 }

@@ -11,9 +11,10 @@
 #include "poly.h"
 
 typedef struct SecretKey {
-    uint8_t s[MODULE_RANK][HS];
+    uint8_t *s[MODULE_RANK];
     uint8_t t[T_BYTES];
     uint8_t neg_start[MODULE_RANK];
+    uint8_t cnt_arr[MODULE_RANK];
 } secret_key;
 
 typedef struct PublicKey {

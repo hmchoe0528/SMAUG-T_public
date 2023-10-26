@@ -2,7 +2,7 @@
 
 void save_to_string(uint8_t *output, const ciphertext *ctxt) {
     Rp_vec_to_bytes(output, ctxt->c1);
-    Rp_to_bytes(output + CTPOLYVEC_BYTES, ctxt->c2);
+    Rp2_to_bytes(output + CTPOLYVEC_BYTES, ctxt->c2);
 }
 
 void save_to_file(char *file_path, const uint8_t *ctxt) {
@@ -17,13 +17,15 @@ void save_to_file(char *file_path, const uint8_t *ctxt) {
 
 void load_from_string(ciphertext *ctxt, const uint8_t *input) {
     bytes_to_Rp_vec(ctxt->c1, input);
-    bytes_to_Rp(ctxt->c2, input + CTPOLYVEC_BYTES);
+    bytes_to_Rp2(ctxt->c2, input + CTPOLYVEC_BYTES);
 }
 
 void load_from_file(uint8_t *ctxt, const char *file_path) {
     FILE *f = fopen(file_path, "rb");
-    if (f == NULL)
+    if (f == NULL) {
         printf("Cannot open file in load_from_file\n");
+        return;
+    }
     size_t res = fread(ctxt, sizeof(uint8_t), CIPHERTEXT_BYTES, f);
     if (res != (sizeof(uint8_t) * CIPHERTEXT_BYTES)) {
         printf("Ctxt File reading error\n");
@@ -36,16 +38,11 @@ void load_from_file(uint8_t *ctxt, const char *file_path) {
 /////////////////////////////////////////////////////////////////////////////
 
 void save_to_string_sk(uint8_t *output, const secret_key *sk, const int isPKE) {
-    Sx_vec_to_bytes(output, sk->s);
-    if (isPKE) {
-        memcpy(output + SKPOLYVEC_BYTES, sk->neg_start,
-               sizeof(uint8_t) * MODULE_RANK);
-    } else {
-        memcpy(output + SKPOLYVEC_BYTES, sk->neg_start,
-               sizeof(uint8_t) * MODULE_RANK);
-        memcpy(output + SKPOLYVEC_BYTES + sizeof(uint8_t) * MODULE_RANK, sk->t,
-               sizeof(uint8_t) * T_BYTES);
-    }
+    cmov(output, sk->cnt_arr, MODULE_RANK, 1);
+    Sx_vec_to_bytes(output + MODULE_RANK, (const uint8_t **)sk->s, sk->cnt_arr);
+    cmov(output + MODULE_RANK + SKPOLYVEC_BYTES, sk->neg_start, MODULE_RANK, 1);
+    if (!isPKE)
+        cmov(output + 2 * MODULE_RANK + SKPOLYVEC_BYTES, sk->t, T_BYTES, 1);
 }
 
 void save_to_file_sk(char *file_path, const uint8_t *sk, const int isPKE) {
@@ -61,23 +58,22 @@ void save_to_file_sk(char *file_path, const uint8_t *sk, const int isPKE) {
 
 void load_from_string_sk(secret_key *sk, const uint8_t *input,
                          const int isPKE) {
-    bytes_to_Sx_vec(sk->s, input);
-
-    if (isPKE) {
-        memcpy(sk->neg_start, input + SKPOLYVEC_BYTES,
-               sizeof(uint8_t) * MODULE_RANK);
-    } else {
-        memcpy(sk->neg_start, input + SKPOLYVEC_BYTES,
-               sizeof(uint8_t) * MODULE_RANK);
-        memcpy(sk->t, input + SKPOLYVEC_BYTES + sizeof(uint8_t) * MODULE_RANK,
-               sizeof(uint8_t) * T_BYTES);
+    cmov(sk->cnt_arr, input, MODULE_RANK, 1);
+    for (size_t i = 0; i < MODULE_RANK; ++i)
+        sk->s[i] = (uint8_t *)malloc(sk->cnt_arr[i]);
+    bytes_to_Sx_vec(sk->s, input + MODULE_RANK, sk->cnt_arr);
+    cmov(sk->neg_start, input + MODULE_RANK + SKPOLYVEC_BYTES, MODULE_RANK, 1);
+    if (!isPKE) {
+        cmov(sk->t, input + 2 * MODULE_RANK + SKPOLYVEC_BYTES, T_BYTES, 1);
     }
 }
 
 void load_from_file_sk(uint8_t *sk, const char *file_path, const int isPKE) {
     FILE *f = fopen(file_path, "rb");
-    if (f == NULL)
+    if (f == NULL) {
         printf("Cannot open file in load_from_file_sk\n");
+        return;
+    }
 
     size_t size = isPKE ? PKE_SECRETKEY_BYTES : KEM_SECRETKEY_BYTES;
     size_t res = fread(sk, sizeof(uint8_t), size, f);

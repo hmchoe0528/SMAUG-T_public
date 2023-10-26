@@ -16,7 +16,7 @@
  **************************************************/
 void genAx(uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
            const unsigned char *seed) {
-    uint8_t *buf = (uint8_t *)calloc(PKPOLYMAT_BYTES, sizeof(uint8_t));
+    uint8_t buf[PKPOLYMAT_BYTES] = {0};
     shake128(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
     bytes_to_Rq_mat(A, buf);
     for (size_t i = 0; i < MODULE_RANK; ++i) {
@@ -26,7 +26,6 @@ void genAx(uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
             }
         }
     }
-    free(buf);
 }
 
 /*************************************************
@@ -43,39 +42,13 @@ void genAx(uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
  **************************************************/
 void genBx(uint16_t b[MODULE_RANK][LWE_N],
            const uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
-           const uint8_t s[MODULE_RANK][HS],
-           const uint8_t neg_start[MODULE_RANK], const uint8_t *e_seed) {
-    for (size_t i = 0; i < MODULE_RANK; i++) {
-        if (neg_start[i] > HS)
-            printf("*** ERROR: In genBx, neg_start cannot be larger than %d\n",
-                   HS);
-    }
-
+           const uint8_t *s[MODULE_RANK], const uint8_t neg_start[MODULE_RANK],
+           const uint8_t s_cnt_arr[MODULE_RANK], const uint8_t *e_seed) {
     // b = e
     addGaussianErrorVec(b, e_seed);
 
     // b = -a * s + e
-    matrix_vec_mult_sub(b, A, s, HS, neg_start, 0);
-}
-
-/*************************************************
- * Name:        genSx
- *
- * Description: Generate secret sparse polynomial s(x) from a seed, sampled by
- *              random number generator, and compress it.
- *
- * Arguments:   - uint8_t *s: pointer to output compressed s(x) (of lenth HS)
- *              - const uint8_t *seed: pointer to a input seed of s(x) (of
- *                                     length CRYPTO_BYTES + sizeof(size_t))
- **************************************************/
-uint8_t genSx(uint8_t *s, const uint8_t *seed) {
-    uint8_t xof_res[CRYPTO_BYTES] = {0};
-    shake128(xof_res, CRYPTO_BYTES, seed, CRYPTO_BYTES + sizeof(size_t));
-
-    uint8_t s_temp[LWE_N] = {0};
-    hwt(s_temp, xof_res, CRYPTO_BYTES, HS);
-
-    return convToIdx(s, HS, s_temp, LWE_N, 0);
+    matrix_vec_mult_sub(b, A, s, s_cnt_arr, neg_start, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -92,12 +65,16 @@ uint8_t genSx(uint8_t *s, const uint8_t *seed) {
  *                                     length CRYPTO_BYTES)
  **************************************************/
 void genSx_vec(secret_key *sk, const uint8_t *seed) {
-    uint8_t seed_temp[CRYPTO_BYTES + sizeof(size_t)] = {0};
-    memcpy(seed_temp, seed, CRYPTO_BYTES);
-    for (size_t i = 0; i < MODULE_RANK; i++) {
-        // Set s_idx showing degree index of coefficients which is not 0
-        memcpy(seed_temp + CRYPTO_BYTES, &i, sizeof(size_t));
-        sk->neg_start[i] = genSx(sk->s[i], seed);
+    uint8_t res[DIMENSION] = {0};
+
+    for (size_t i = 0; i < MODULE_RANK; ++i)
+        sk->cnt_arr[i] = 0;
+    hwt(res, sk->cnt_arr, seed, CRYPTO_BYTES, HS);
+
+    for (size_t i = 0; i < MODULE_RANK; ++i) {
+        sk->s[i] = (uint8_t *)malloc(sk->cnt_arr[i]);
+        sk->neg_start[i] =
+            convToIdx(sk->s[i], sk->cnt_arr[i], res + (i * LWE_N), LWE_N);
     }
 }
 
@@ -116,7 +93,8 @@ void genPubkey(public_key *pk, const secret_key *sk, const uint8_t *err_seed) {
 
     memset(pk->b, 0, sizeof(uint16_t) * LWE_N);
     // Initialized at addGaussian, Unnecessary
-    genBx(pk->b, pk->A, sk->s, sk->neg_start, err_seed);
+    genBx(pk->b, pk->A, (const uint8_t **)sk->s, sk->neg_start, sk->cnt_arr,
+          err_seed);
 }
 
 /////////////////////////////////////////////////////////////////////////////

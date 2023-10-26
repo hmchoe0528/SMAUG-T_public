@@ -11,9 +11,8 @@
 
 #define m_size 10
 
-int kem_test();
 int indcpa_test();
-void simple_test();
+int kem_test();
 
 int main(void) {
     time_t mytime = time(NULL);
@@ -22,11 +21,8 @@ int main(void) {
     printf("\n*** %s with mode %d starts at %s\n", "SMAUG KEM", SMAUG_MODE,
            time_str);
 
-    // simple_test();
-    // indcpa_test();
     size_t count = 1;
-    // const size_t iteration = 10000000;
-    const size_t iteration = 100;
+    const size_t iteration = 100000;
 
     uint8_t entropy_input[48] = {0};
     for (size_t i = 0; i < 48; ++i) {
@@ -41,125 +37,76 @@ int main(void) {
             ++count;
         }
 
-        if (indcpa_test()) {
-            printf("PKE test fails at %lu-th tries\n", i);
-            break;
-        }
-
-        // if (kem_test()) {
-        //     printf("KEM test fails at %lu-th tries\n", i);
+        // if (indcpa_test()) {
+        //     printf("PKE test fails at %lu-th tries\n", i);
         //     break;
         // }
+
+        if (kem_test()) {
+            printf("KEM test fails at %lu-th tries\n", i);
+            break;
+        }
     }
 
     return 0;
 }
 
-// void simple_test() {
-//     uint8_t pk[PUBLICKEY_BYTES] = {0}, pk2[PUBLICKEY_BYTES] = {0};
-//     uint8_t sk[KEM_SECRETKEY_BYTES] = {0};
-
-//     indcpa_keypair(pk, sk);
-//     printf("indcpa_keypair done\n");
-
-//     public_key pk_tmp;
-//     load_from_string_pk(&pk_tmp, pk);
-//     save_to_string_pk(pk2, &pk_tmp);
-//     if (memcmp(pk, pk2, PUBLICKEY_BYTES)) {
-//         printf("Diff pk's\n");
-
-//         printf("pk : ");
-//         for (int i = 0; i < m_size; ++i)
-//             printf("%02x ", pk[i]);
-//         printf("\n");
-
-//         printf("pk2: ");
-//         for (int i = 0; i < m_size; ++i)
-//             printf("%02x ", pk2[i]);
-//         printf("\n");
-//     }
-
-//     // ind-cpa pke enc
-//     uint8_t mx[DELTA_BYTES] = {0};
-//     randombytes(mx, DELTA_BYTES);
-
-//     // uint8_t ctxt[CIPHERTEXT_BYTES] = {0};
-//     ciphertext ctxt;
-//     indcpa_enc(&ctxt, pk, mx);
-//     printf("indcpa_enc done\n");
-
-//     // ind-cpa pke dec
-//     uint8_t mx2[DELTA_BYTES] = {0};
-//     indcpa_dec(mx2, sk, &ctxt);
-//     printf("indcpa_dec done\n");
-
-//     if (memcmp(mx, mx2, DELTA_BYTES))
-//         printf("Diff mx\n");
-// }
-
 int indcpa_test() {
-    int res = 0;
     uint8_t pk[PUBLICKEY_BYTES] = {0};
     uint8_t sk[PKE_SECRETKEY_BYTES] = {0};
     uint8_t ctxt[CIPHERTEXT_BYTES] = {0};
-    // ciphertext ctxt;
+    uint8_t mu[DELTA_BYTES] = {0}, mu2[DELTA_BYTES] = {0};
+    uint8_t seed[DELTA_BYTES] = {0};
 
     indcpa_keypair(pk, sk);
     // printf("indcpa_keypair done\n");
 
-    uint8_t delta[DELTA_BYTES] = {0}, delta2[DELTA_BYTES] = {0};
-    randombytes(delta, DELTA_BYTES);
+    randombytes(mu, DELTA_BYTES);
+    randombytes(seed, DELTA_BYTES);
 
-    indcpa_enc(ctxt, pk, delta);
-    // indcpa_enc(&ctxt, pk, delta);
+    indcpa_enc(ctxt, pk, mu, seed);
     // printf("indcpa_enc done\n");
 
-    indcpa_dec(delta2, sk, ctxt);
-    // indcpa_dec(delta2, sk, &ctxt);
+    indcpa_dec(mu2, sk, ctxt);
     // printf("indcpa_dec done\n");
 
-    if (memcmp(delta, delta2, DELTA_BYTES)) {
+    if (memcmp(mu, mu2, DELTA_BYTES) != 0) {
         for (int i = 0; i < m_size; ++i)
-            printf("%d ", delta[i]);
+            printf("0x%2hx ", mu[i]);
         printf("\n");
 
         for (int i = 0; i < m_size; ++i)
-            printf("%d ", delta2[i]);
+            printf("0x%2hx ", mu2[i]);
         printf("\n");
-        res = 1;
+        return 1;
     }
 
-    return res;
+    return 0;
 }
 
 int kem_test() {
     uint8_t pk[PUBLICKEY_BYTES] = {0};
     uint8_t sk[KEM_SECRETKEY_BYTES] = {0};
-    // public_key pk;
-    // secret_key sk;
 
     crypto_kem_keypair(pk, sk);
     // printf("Keygen_kem done\n");
 
     uint8_t ctxt[CIPHERTEXT_BYTES] = {0};
-    // ciphertext ctxt;
     uint8_t ss[CRYPTO_BYTES] = {0}, ss2[CRYPTO_BYTES] = {0};
     crypto_kem_encap(ctxt, ss, pk);
-    // crypto_kem_encap(&ctxt, ss, &pk);
     // printf("Encap done\n");
 
     int res = crypto_kem_decap(ss2, sk, pk, ctxt);
-    // int res = crypto_kem_decap(ss2, &sk, &pk, &ctxt);
     // printf("Decap done\n");
 
-    if (memcmp(ss, ss2, CRYPTO_BYTES)) {
+    if (memcmp(ss, ss2, CRYPTO_BYTES) != 0) {
         for (int i = 0; i < m_size; ++i) {
-            printf("%d ", ss[i]);
+            printf("0x%2hx ", ss[i]);
         }
         printf("\n");
 
         for (int i = 0; i < m_size; ++i) {
-            printf("%d ", ss2[i]);
+            printf("0x%2hx ", ss2[i]);
         }
         printf("\n");
     }

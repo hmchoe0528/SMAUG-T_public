@@ -1,10 +1,12 @@
 #ifndef SMAUG_IO_H
 #define SMAUG_IO_H
 
+#include <stdlib.h>
+
 #include "ciphertext.h"
 #include "key.h"
 #include "parameters.h"
-#include <stdlib.h>
+#include "verify.h"
 
 // For ciphertext
 void save_to_string(uint8_t *output, const ciphertext *ctxt);
