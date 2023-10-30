@@ -1,5 +1,6 @@
 # SMAUG_public
-SMAUG reference code (public release)
+SMAUG reference code (public release). 
+Visit our [official website] (https://www.kpqc.cryptolab.co.kr/smaug).
 
 
 # Build
@@ -34,3 +35,17 @@ If you want to run quick tests for each unit of the SMAUG, call
 # In the build directory
 $ ctest
 ```
+
+# Citing
+
+A conference version will be available soon. A pre-print is available as
+
+    | Cryptology ePrint Archive, Report 2023/739, 2023. https://eprint.iacr.org/2023/739
+
+# License
+
+The codes and the specifications are under the MIT license
+
+# Acknowledgements
+
+SMAUG is submitted to the Korean Post-Quantum Cryptography competition. 
