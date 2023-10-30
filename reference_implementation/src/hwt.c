@@ -12,41 +12,28 @@
  *                (of length LWE), assumed to be already initialized
  *              - uint8_t *input: pointer to input seed (of length input_size)
  *              - size_t input_size: length of input seed
+ *              - uint16_t hmwt: hamming weight to sample
  **************************************************/
 void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
          const size_t input_size, const uint16_t hmwt) {
-    uint32_t i, pos = 0;
-    uint16_t deg_mask = 0, deg = 0;
-    uint16_t buf[SHAKE256_RATE / 2] = {0};
 
-#if SMAUG_MODE == 1
-    deg_mask = 0x3ff;
-#elif SMAUG_MODE == 3
-    deg_mask = 0x7ff;
-#elif SMAUG_MODE == 5
-    deg_mask = 0xfff;
-#endif
+    uint32_t i = 0, pos = 0;
+    uint32_t buf[SHAKE256_RATE * 2] = {0};
 
+    uint8_t xof_block = (hmwt == HS) ? HS_XOF : HR_XOF;
     keccak_state state;
     shake256_init(&state);
     shake256_absorb_once(&state, input, input_size);
-    shake256_squeezeblocks((uint8_t *)buf, 1, &state);
-
-    for (i = 0; i < DIMENSION; ++i)
-        res[i] = 0;
+    shake256_squeezeblocks((uint8_t *)buf, xof_block, &state);
 
     for (i = DIMENSION - hmwt; i < DIMENSION; ++i) {
-        do {
-            if (pos >= SHAKE256_RATE / 2) {
-                shake256_squeezeblocks((uint8_t *)buf, 1, &state);
-                pos = 0;
-            }
-
-            deg = buf[pos++] & deg_mask;
-        } while (deg > i);
+        uint64_t deg_tmp = 0;
+        deg_tmp = (uint64_t)buf[pos] * (i + 1);
+        uint32_t deg = (uint32_t)(deg_tmp >> 32);
 
         res[i] = res[deg];
-        res[deg] = ((buf[pos - 1] >> 14) & 0x02) - 1;
+        res[deg] = ((buf[(hmwt + (pos >> 4))] >> (pos & 0x0f)) & 0x02) - 1;
+        pos++;
     }
 
     size_t cnt_arr_idx = 0;

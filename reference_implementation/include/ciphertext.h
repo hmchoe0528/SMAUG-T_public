@@ -7,19 +7,15 @@
 #include "poly.h"
 
 typedef struct Ciphertext {
-    uint16_t c1[MODULE_RANK][LWE_N];
-    uint16_t c2[LWE_N];
+    polyvec c1;
+    poly c2;
 } ciphertext;
 
-void computeC1(uint16_t c1[MODULE_RANK][LWE_N],
-               const uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
-               const uint8_t *r[MODULE_RANK],
-               const uint8_t r_cnt_arr[MODULE_RANK],
-               const uint8_t r_neg_start[MODULE_RANK]);
-void computeC2(uint16_t c2[LWE_N], const uint8_t delta[DELTA_BYTES],
-               const uint16_t b[MODULE_RANK][LWE_N],
-               const uint8_t *r[MODULE_RANK],
-               const uint8_t r_cnt_arr[MODULE_RANK],
-               const uint8_t r_neg_start[MODULE_RANK]);
+#define computeC1 SMAUG_NAMESPACE(computeC1)
+void computeC1(polyvec *c1, const polyvec A[MODULE_RANK],
+               const sppoly r[MODULE_RANK]);
+#define computeC2 SMAUG_NAMESPACE(computeC2)
+void computeC2(poly *c2, const uint8_t delta[DELTA_BYTES], const polyvec *b,
+               const sppoly r[MODULE_RANK]);
 
 #endif // SMAUG_CIPHERTEXT_H

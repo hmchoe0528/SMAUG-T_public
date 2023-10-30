@@ -1,5 +1,5 @@
-#ifndef api_h
-#define api_h
+#ifndef kat_api_h
+#define kat_api_h
 
 #include <stdint.h>
 
@@ -22,4 +22,4 @@ int kat_crypto_kem_enc(unsigned char *ct, unsigned char *ss, unsigned char *pk);
 int kat_crypto_kem_dec(unsigned char *ss1, unsigned char *ct, unsigned char *pk,
                        unsigned char *sk);
 
-#endif /* api_h */
+#endif /* kat_api_h */

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "parameters.h"
+#include "poly.h"
 #include "verify.h"
 
 #define R11_DATA_OFFSET LOG_Q
@@ -13,33 +14,37 @@
 #define R10_DATA_OFFSET (LOG_Q / 2)
 #define R10_BYTE_OFFSET (8 / 2) // (bit size of uint8_t) / 2
 
-void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const uint16_t data[LWE_N],
-                 const size_t dlen);
-void bytes_to_Rq(uint16_t data[LWE_N], const uint8_t bytes[PKPOLY_BYTES],
-                 const size_t dlen);
-void Rq_vec_to_bytes(uint8_t bytes[PKPOLYVEC_BYTES],
-                     const uint16_t data[MODULE_RANK][LWE_N]);
-void bytes_to_Rq_vec(uint16_t data[MODULE_RANK][LWE_N],
-                     const uint8_t bytes[PKPOLYVEC_BYTES]);
+#define Rq_to_bytes SMAUG_NAMESPACE(Rq_to_bytes)
+void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data);
+#define bytes_to_Rq SMAUG_NAMESPACE(bytes_to_Rq)
+void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]);
+#define Rq_vec_to_bytes SMAUG_NAMESPACE(Rq_vec_to_bytes)
+void Rq_vec_to_bytes(uint8_t bytes[PKPOLYVEC_BYTES], const polyvec *data);
+#define bytes_to_Rq_vec SMAUG_NAMESPACE(bytes_to_Rq_vec)
+void bytes_to_Rq_vec(polyvec *data, const uint8_t bytes[PKPOLYVEC_BYTES]);
+#define Rq_mat_to_bytes SMAUG_NAMESPACE(Rq_mat_to_bytes)
 void Rq_mat_to_bytes(uint8_t bytes[PKPOLYMAT_BYTES],
-                     const uint16_t data[MODULE_RANK][MODULE_RANK][LWE_N]);
-void bytes_to_Rq_mat(uint16_t data[MODULE_RANK][MODULE_RANK][LWE_N],
+                     const polyvec data[MODULE_RANK]);
+#define bytes_to_Rq_mat SMAUG_NAMESPACE(bytes_to_Rq_mat)
+void bytes_to_Rq_mat(polyvec data[MODULE_RANK],
                      const uint8_t bytes[PKPOLYMAT_BYTES]);
 
-void Rp_to_bytes(uint8_t bytes[CTPOLY1_BYTES], const uint16_t data[LWE_N]);
-void bytes_to_Rp(uint16_t data[LWE_N], const uint8_t bytes[CTPOLY1_BYTES]);
-void Rp2_to_bytes(uint8_t bytes[CTPOLY2_BYTES], const uint16_t data[LWE_N]);
-void bytes_to_Rp2(uint16_t data[LWE_N], const uint8_t bytes[CTPOLY2_BYTES]);
-void Rp_vec_to_bytes(uint8_t bytes[CTPOLYVEC_BYTES],
-                     const uint16_t data[MODULE_RANK][LWE_N]);
-void bytes_to_Rp_vec(uint16_t data[MODULE_RANK][LWE_N],
-                     const uint8_t bytes[CTPOLYVEC_BYTES]);
+#define Rp_to_bytes SMAUG_NAMESPACE(Rp_to_bytes)
+void Rp_to_bytes(uint8_t bytes[CTPOLY1_BYTES], const poly *data);
+#define bytes_to_Rp SMAUG_NAMESPACE(bytes_to_Rp)
+void bytes_to_Rp(poly *data, const uint8_t bytes[CTPOLY1_BYTES]);
+#define Rp2_to_bytes SMAUG_NAMESPACE(Rp2_to_bytes)
+void Rp2_to_bytes(uint8_t bytes[CTPOLY2_BYTES], const poly *data);
+#define bytes_to_Rp2 SMAUG_NAMESPACE(bytes_to_Rp2)
+void bytes_to_Rp2(poly *data, const uint8_t bytes[CTPOLY2_BYTES]);
+#define Rp_vec_to_bytes SMAUG_NAMESPACE(Rp_vec_to_bytes)
+void Rp_vec_to_bytes(uint8_t bytes[CTPOLYVEC_BYTES], const polyvec *data);
+#define bytes_to_Rp_vec SMAUG_NAMESPACE(bytes_to_Rp_vec)
+void bytes_to_Rp_vec(polyvec *data, const uint8_t bytes[CTPOLYVEC_BYTES]);
 
+#define Sx_to_bytes SMAUG_NAMESPACE(Sx_to_bytes)
 void Sx_to_bytes(uint8_t *bytes, const uint8_t *data, const uint8_t data_len);
+#define bytes_to_Sx SMAUG_NAMESPACE(bytes_to_Sx)
 void bytes_to_Sx(uint8_t *data, const uint8_t *bytes, const uint8_t bytes_len);
-void Sx_vec_to_bytes(uint8_t *bytes, const uint8_t *data[MODULE_RANK],
-                     const uint8_t *data_len_arr);
-void bytes_to_Sx_vec(uint8_t *data[MODULE_RANK], const uint8_t *bytes,
-                     const uint8_t *bytes_len_arr);
 
 #endif // SMAUG_PACK_H

@@ -10,9 +10,9 @@
  *              - uint16_t deg: degree from sparse polynomial
  **************************************************/
 inline void __attribute__((always_inline))
-poly_add(uint16_t *res, const uint16_t *op1, const uint16_t deg) {
+poly_add(uint16_t res[2 * LWE_N], const poly *op1, const uint8_t deg) {
     for (size_t i = 0; i < LWE_N; ++i)
-        res[deg + i] += op1[i];
+        res[deg + i] += op1->coeffs[i];
 }
 
 /*************************************************
@@ -25,9 +25,9 @@ poly_add(uint16_t *res, const uint16_t *op1, const uint16_t deg) {
  *              - uint16_t deg: degree from sparse polynomial
  **************************************************/
 inline void __attribute__((always_inline))
-poly_sub(uint16_t *res, const uint16_t *op1, const uint16_t deg) {
+poly_sub(uint16_t res[2 * LWE_N], const poly *op1, const uint8_t deg) {
     for (size_t i = 0; i < LWE_N; ++i)
-        res[deg + i] -= op1[i];
+        res[deg + i] -= op1->coeffs[i];
 }
 
 /*************************************************
@@ -39,9 +39,10 @@ poly_sub(uint16_t *res, const uint16_t *op1, const uint16_t deg) {
  *              - uint16_t *temp: pointer to input polynomial
  *              - uint16_t deg: degree from sparse polynomial
  **************************************************/
-void poly_reduce(uint16_t *res, const uint16_t *temp) {
+inline void __attribute__((always_inline))
+poly_reduce(poly *res, const uint16_t temp[2 * LWE_N]) {
     for (size_t j = 0; j < LWE_N; ++j) {
-        res[j] += temp[j] - temp[j + LWE_N];
+        res->coeffs[j] += temp[j] - temp[j + LWE_N];
     }
 }
 
@@ -59,16 +60,15 @@ void poly_reduce(uint16_t *res, const uint16_t *temp) {
  *              - uint8_t neg_start: neg_start corresponding
  *                to second input polynomial
  **************************************************/
-void poly_mult_add(uint16_t *res, const uint16_t *op1, const uint8_t *op2,
-                   const size_t op2_length, const uint8_t neg_start) {
+void poly_mult_add(poly *res, const poly *op1, const sppoly *op2) {
     uint16_t temp[LWE_N * 2] = {0};
 
-    for (size_t j = 0; j < neg_start; ++j) {
-        poly_add(temp, op1, op2[j]);
+    for (size_t j = 0; j < op2->neg_start; ++j) {
+        poly_add(temp, op1, (op2->sx)[j]);
     }
 
-    for (size_t j = neg_start; j < op2_length; ++j) {
-        poly_sub(temp, op1, op2[j]);
+    for (size_t j = op2->neg_start; j < op2->cnt; ++j) {
+        poly_sub(temp, op1, (op2->sx)[j]);
     }
     poly_reduce(res, temp);
 }
@@ -87,15 +87,15 @@ void poly_mult_add(uint16_t *res, const uint16_t *op1, const uint8_t *op2,
  *              - uint8_t neg_start: neg_start corresponding
  *                to second input polynomial
  **************************************************/
-void poly_mult_sub(uint16_t *res, const uint16_t *op1, const uint8_t *op2,
-                   const size_t op2_length, const uint8_t neg_start) {
+void poly_mult_sub(poly *res, const poly *op1, const sppoly *op2) {
     uint16_t temp[LWE_N * 2] = {0};
-    for (size_t j = 0; j < neg_start; ++j) {
-        poly_sub(temp, op1, op2[j]);
+
+    for (size_t j = 0; j < op2->neg_start; ++j) {
+        poly_sub(temp, op1, (op2->sx)[j]);
     }
 
-    for (size_t j = neg_start; j < op2_length; ++j) {
-        poly_add(temp, op1, op2[j]);
+    for (size_t j = op2->neg_start; j < op2->cnt; ++j) {
+        poly_add(temp, op1, (op2->sx)[j]);
     }
     poly_reduce(res, temp);
 }
@@ -119,20 +119,14 @@ void poly_mult_sub(uint16_t *res, const uint16_t *op1, const uint8_t *op2,
  *              - int16_t transpose: boolean deciding whether
  *                input matrix transposed or not
  **************************************************/
-void matrix_vec_mult_add(uint16_t res[MODULE_RANK][LWE_N],
-                         const uint16_t op1[MODULE_RANK][MODULE_RANK][LWE_N],
-                         const uint8_t *op2[MODULE_RANK],
-                         const uint8_t op2_len_arr[MODULE_RANK],
-                         const uint8_t neg_start[MODULE_RANK],
-                         int16_t transpose) {
+void matrix_vec_mult_add(polyvec *res, const polyvec op1[MODULE_RANK],
+                         const sppoly op2[MODULE_RANK], int16_t transpose) {
     for (int i = 0; i < MODULE_RANK; i++) {
         for (int j = 0; j < MODULE_RANK; j++) {
             if (transpose == 1) {
-                poly_mult_add(res[i], op1[j][i], op2[j], op2_len_arr[j],
-                              neg_start[j]);
+                poly_mult_add(&(res->vec[i]), &(op1[j].vec[i]), &(op2[j]));
             } else {
-                poly_mult_add(res[i], op1[i][j], op2[j], op2_len_arr[j],
-                              neg_start[j]);
+                poly_mult_add(&(res->vec[i]), &(op1[i].vec[j]), &(op2[j]));
             }
         }
     }
@@ -157,21 +151,15 @@ void matrix_vec_mult_add(uint16_t res[MODULE_RANK][LWE_N],
  *              - int16_t transpose: boolean deciding whether
  *                input matrix transposed or not
  **************************************************/
-void matrix_vec_mult_sub(uint16_t res[MODULE_RANK][LWE_N],
-                         const uint16_t op1[MODULE_RANK][MODULE_RANK][LWE_N],
-                         const uint8_t *op2[MODULE_RANK],
-                         const uint8_t op2_len_arr[MODULE_RANK],
-                         const uint8_t neg_start[MODULE_RANK],
-                         int16_t transpose) {
+void matrix_vec_mult_sub(polyvec *res, const polyvec op1[MODULE_RANK],
+                         const sppoly op2[MODULE_RANK], int16_t transpose) {
 
     for (int i = 0; i < MODULE_RANK; i++) {
         for (int j = 0; j < MODULE_RANK; j++) {
             if (transpose == 1) {
-                poly_mult_sub(res[i], op1[j][i], op2[j], op2_len_arr[j],
-                              neg_start[j]);
+                poly_mult_sub(&(res->vec[i]), &(op1[j].vec[i]), &(op2[j]));
             } else {
-                poly_mult_sub(res[i], op1[i][j], op2[j], op2_len_arr[j],
-                              neg_start[j]);
+                poly_mult_sub(&(res->vec[i]), &(op1[i].vec[j]), &(op2[j]));
             }
         }
     }
@@ -194,13 +182,10 @@ void matrix_vec_mult_sub(uint16_t res[MODULE_RANK][LWE_N],
  *              - uint8_t neg_start: vector of negstart (each element
  *corresponds to the same index element in the input polynomial vector)
  **************************************************/
-void vec_vec_mult_add(uint16_t res[LWE_N],
-                      const uint16_t op1[MODULE_RANK][LWE_N],
-                      const uint8_t *op2[MODULE_RANK],
-                      const uint8_t op2_len_arr[MODULE_RANK],
-                      const uint8_t neg_start[MODULE_RANK]) {
+void vec_vec_mult_add(poly *res, const polyvec *op1,
+                      const sppoly op2[MODULE_RANK]) {
     for (int j = 0; j < MODULE_RANK; j++) {
-        poly_mult_add(res, op1[j], op2[j], op2_len_arr[j], neg_start[j]);
+        poly_mult_add(res, &(op1->vec[j]), &(op2[j]));
     }
 }
 

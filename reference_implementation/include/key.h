@@ -11,23 +11,27 @@
 #include "poly.h"
 
 typedef struct SecretKey {
-    uint8_t *s[MODULE_RANK];
-    uint8_t t[T_BYTES];
-    uint8_t neg_start[MODULE_RANK];
-    uint8_t cnt_arr[MODULE_RANK];
+    sppoly sp_vec[MODULE_RANK];
 } secret_key;
 
 typedef struct PublicKey {
     uint8_t seed[PKSEED_BYTES];
-    uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N];
-    uint16_t b[MODULE_RANK][LWE_N];
+    polyvec A[MODULE_RANK];
+    polyvec b;
 } public_key;
 
-void genAx(uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
-           const unsigned char *seed);
-void genSx_vec(secret_key *sk, const uint8_t *seed);
-void genPubkey(public_key *pk, const secret_key *sk, const uint8_t *err_seed);
+#define genAx SMAUG_NAMESPACE(genAx)
+void genAx(polyvec A[MODULE_RANK], const unsigned char seed[PKSEED_BYTES]);
+#define genBx SMAUG_NAMESPACE(genBx)
+void genBx(polyvec *b, const polyvec A[MODULE_RANK],
+           const sppoly s_vec[MODULE_RANK], const uint8_t e_seed[CRYPTO_BYTES]);
+#define genSx_vec SMAUG_NAMESPACE(genSx_vec)
+void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]);
+#define genPubkey SMAUG_NAMESPACE(genPubkey)
+void genPubkey(public_key *pk, const secret_key *sk,
+               const uint8_t err_seed[CRYPTO_BYTES]);
 
+#define checkSanity SMAUG_NAMESPACE(checkSanity)
 int checkSanity(const public_key *pk, const secret_key *sk);
 
 #endif // SMAUG_KEY_H

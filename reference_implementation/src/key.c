@@ -11,18 +11,17 @@
  *              Entries of the A are polynomials that look uniformly random.
  *
  * Arguments:   - uint16_t *A: pointer to output matrix A
- *              - unsigned char *seed: pointer to input seed (of length
+ *              - uint8_t *seed: pointer to input seed (of length
  *                                     PKSEED_BYTES)
  **************************************************/
-void genAx(uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
-           const unsigned char *seed) {
+void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {
     uint8_t buf[PKPOLYMAT_BYTES] = {0};
     shake128(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
     bytes_to_Rq_mat(A, buf);
     for (size_t i = 0; i < MODULE_RANK; ++i) {
         for (size_t j = 0; j < MODULE_RANK; ++j) {
             for (size_t k = 0; k < LWE_N; ++k) {
-                A[i][j][k] <<= _16_LOG_Q;
+                A[i].vec[j].coeffs[k] <<= _16_LOG_Q;
             }
         }
     }
@@ -36,19 +35,18 @@ void genAx(uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
  *
  * Arguments:   - uint16_t *b: pointer to output vector b
  *              - uint16_t *A: pointer to input matrix A
- *              - uint8_t *s: pointer to input vector s
- *              - uint8_t *neg_start: pointer to input vector neg_start
- *                (used to multiplication of sparse polynomial vector s)
+ *              - uint8_t *s_vec: pointer to input vector s
+ *              - uint8_t *e_seed: pointer to input seed of error (of
+ *                                     length CRYPTO_BYTES)
  **************************************************/
-void genBx(uint16_t b[MODULE_RANK][LWE_N],
-           const uint16_t A[MODULE_RANK][MODULE_RANK][LWE_N],
-           const uint8_t *s[MODULE_RANK], const uint8_t neg_start[MODULE_RANK],
-           const uint8_t s_cnt_arr[MODULE_RANK], const uint8_t *e_seed) {
+void genBx(polyvec *b, const polyvec A[MODULE_RANK],
+           const sppoly s_vec[MODULE_RANK],
+           const uint8_t e_seed[CRYPTO_BYTES]) {
     // b = e
     addGaussianErrorVec(b, e_seed);
 
     // b = -a * s + e
-    matrix_vec_mult_sub(b, A, s, s_cnt_arr, neg_start, 0);
+    matrix_vec_mult_sub(b, A, s_vec, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -64,17 +62,17 @@ void genBx(uint16_t b[MODULE_RANK][LWE_N],
  *              - const uint8_t *seed: pointer to a input seed of s(x) (of
  *                                     length CRYPTO_BYTES)
  **************************************************/
-void genSx_vec(secret_key *sk, const uint8_t *seed) {
+void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
     uint8_t res[DIMENSION] = {0};
+    uint8_t cnt_arr[MODULE_RANK] = {0};
 
-    for (size_t i = 0; i < MODULE_RANK; ++i)
-        sk->cnt_arr[i] = 0;
-    hwt(res, sk->cnt_arr, seed, CRYPTO_BYTES, HS);
+    hwt(res, cnt_arr, seed, CRYPTO_BYTES, HS);
 
     for (size_t i = 0; i < MODULE_RANK; ++i) {
-        sk->s[i] = (uint8_t *)malloc(sk->cnt_arr[i]);
-        sk->neg_start[i] =
-            convToIdx(sk->s[i], sk->cnt_arr[i], res + (i * LWE_N), LWE_N);
+        (sk->sp_vec[i]).cnt = cnt_arr[i];
+        (sk->sp_vec[i]).sx = (uint8_t *)calloc(cnt_arr[i], sizeof(uint8_t));
+        (sk->sp_vec[i]).neg_start = convToIdx(
+            (sk->sp_vec[i]).sx, (sk->sp_vec[i]).cnt, res + (i * LWE_N), LWE_N);
     }
 }
 
@@ -85,16 +83,17 @@ void genSx_vec(secret_key *sk, const uint8_t *seed) {
  *
  * Arguments:   - public_key *pk: pointer to output public key
  *              - secret_key *sk: pointer to input private key
- *              - const uint8_t *sk: pointer to input seed of A
+ *              - const uint8_t *err_seed: pointer to input seed of error (of
+ *                                     length CRYPTO_BYTES)
  **************************************************/
-void genPubkey(public_key *pk, const secret_key *sk, const uint8_t *err_seed) {
+void genPubkey(public_key *pk, const secret_key *sk,
+               const uint8_t err_seed[CRYPTO_BYTES]) {
     shake128(pk->seed, PKSEED_BYTES, pk->seed, PKSEED_BYTES);
     genAx(pk->A, pk->seed);
 
-    memset(pk->b, 0, sizeof(uint16_t) * LWE_N);
+    memset(&(pk->b), 0, sizeof(uint16_t) * LWE_N);
     // Initialized at addGaussian, Unnecessary
-    genBx(pk->b, pk->A, (const uint8_t **)sk->s, sk->neg_start, sk->cnt_arr,
-          err_seed);
+    genBx(&(pk->b), pk->A, sk->sp_vec, err_seed);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -114,11 +113,11 @@ int checkSanity(const public_key *pk, const secret_key *sk) {
     for (int i = 0; i < MODULE_RANK; ++i) {
         for (int j = 0; j < MODULE_RANK; ++j) {
             for (int k = 0; k < LWE_N; ++k) {
-                if (pk->A[i][j][k] & ((1 << _16_LOG_Q) - 1)) {
+                if (pk->A[i].vec[j].coeffs[k] & ((1 << _16_LOG_Q) - 1)) {
                     printf("*** ERROR: pk->A[%d][%d][%d] has an invalid "
                            "value: "
                            "%u\n",
-                           i, j, k, (unsigned)pk->A[i][j][k]);
+                           i, j, k, (unsigned)pk->A[i].vec[j].coeffs[k]);
                     return 1;
                 }
             }
@@ -127,10 +126,10 @@ int checkSanity(const public_key *pk, const secret_key *sk) {
 
     for (int i = 0; i < MODULE_RANK; ++i) {
         for (int j = 0; j < LWE_N; ++j) {
-            if (pk->b[i][j] & ((1 << _16_LOG_Q) - 1)) {
+            if (pk->b.vec[i].coeffs[j] & ((1 << _16_LOG_Q) - 1)) {
                 printf("*** ERROR: pk->b[%d][%d] has an invalid value: "
                        "%u\n",
-                       i, j, (unsigned)pk->b[i][j]);
+                       i, j, (unsigned)pk->b.vec[i].coeffs[j]);
                 return 1;
             }
         }
@@ -140,7 +139,7 @@ int checkSanity(const public_key *pk, const secret_key *sk) {
         return 0;
 
     for (int i = 0; i < MODULE_RANK; ++i) {
-        if (sk->neg_start[i] > HS) {
+        if ((sk->sp_vec[i]).neg_start > HS) {
             printf("*** ERROR: sk->neg_start[%d] cannot be larger than %d\n", i,
                    HS);
             return 1;

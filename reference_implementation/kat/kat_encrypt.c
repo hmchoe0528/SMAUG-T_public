@@ -1,4 +1,4 @@
-#include "api.h"
+#include "kat_api.h"
 #include "indcpa.h"
 
 int crypto_encrypt_keypair(unsigned char *pk, unsigned char *sk) {

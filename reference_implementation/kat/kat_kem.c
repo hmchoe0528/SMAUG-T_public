@@ -1,4 +1,4 @@
-#include "api.h"
+#include "kat_api.h"
 #include "kem.h"
 
 int kat_crypto_kem_keypair(unsigned char *pk, unsigned char *sk) {

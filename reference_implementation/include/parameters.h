@@ -6,6 +6,8 @@
 #define LWE_N (1 << LOG_LWE_N)  // LWE dim and LWR dim
 
 #if SMAUG_MODE == 1
+#define SMAUG_NAMESPACE(s) cryptolab_smaug1_##s
+
 #define LAMBDA 128              // security
 #define MODULE_RANK 2           // rank of the module, in (2, 3, 5)
 #define DIMENSION MODULE_RANK * LWE_N
@@ -17,6 +19,8 @@
 #define HR 132                  // Hamming weight of coefficient vector r
 
 #elif SMAUG_MODE == 3
+#define SMAUG_NAMESPACE(s) cryptolab_smaug3_##s
+
 #define LAMBDA 192              // security
 #define MODULE_RANK 3           // rank of the module, in (2, 3, 5)
 #define DIMENSION MODULE_RANK * LWE_N
@@ -28,6 +32,8 @@
 #define HR 151                  // Hamming weight of coefficient vector r
 
 #elif SMAUG_MODE == 5
+#define SMAUG_NAMESPACE(s) cryptolab_smaug5_##s
+
 #define LAMBDA 256              // security
 #define MODULE_RANK 5           // rank of the module, in (2, 3, 5)
 #define DIMENSION MODULE_RANK * LWE_N

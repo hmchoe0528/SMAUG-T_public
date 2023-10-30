@@ -1,4 +1,4 @@
-#include "api.h"
+#include "kat_api.h"
 #include "rng.h"
 #include <ctype.h>
 #include <stdio.h>
