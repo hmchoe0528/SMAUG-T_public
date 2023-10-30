@@ -1,6 +1,6 @@
 # SMAUG_public
 SMAUG reference code (public release). 
-Visit our [official website] (https://www.kpqc.cryptolab.co.kr/smaug).
+Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug).
 
 
 # Build
@@ -40,11 +40,11 @@ $ ctest
 
 A conference version will be available soon. A pre-print is available as
 
-    | Cryptology ePrint Archive, Report 2023/739, 2023. https://eprint.iacr.org/2023/739
+    Cryptology ePrint Archive, Report 2023/739, 2023. https://eprint.iacr.org/2023/739
 
 # License
 
-The codes and the specifications are under the MIT license
+The codes and the specifications are under the MIT license. 
 
 # Acknowledgements
 
