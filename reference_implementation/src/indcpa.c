@@ -41,12 +41,13 @@ void indcpa_keypair(uint8_t pk[PUBLICKEY_BYTES],
                     uint8_t sk[PKE_SECRETKEY_BYTES]) {
     public_key pk_tmp;
     secret_key sk_tmp;
+    memset(&pk_tmp, 0, sizeof(public_key));
+    memset(&sk_tmp, 0, sizeof(secret_key));
 
     uint8_t seed[CRYPTO_BYTES + PKSEED_BYTES] = {0};
     randombytes(seed, CRYPTO_BYTES);
     shake128(seed, CRYPTO_BYTES + PKSEED_BYTES, seed, CRYPTO_BYTES);
 
-    memset(&sk_tmp, 0, sizeof(secret_key));
     genSx_vec(&sk_tmp, seed);
 
     memcpy(&pk_tmp.seed, seed + CRYPTO_BYTES, PKSEED_BYTES);
