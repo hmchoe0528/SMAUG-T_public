@@ -206,13 +206,14 @@ void vec_vec_mult_add(poly *res, const polyvec *op1,
  **************************************************/
 uint8_t convToIdx(uint8_t *res, const uint8_t res_length, const uint8_t *op,
                   const size_t op_length) {
-    uint8_t index;
+    uint8_t index = 0, b = 0;
     uint8_t index_arr[2] = {0, res_length - 1}; // 0 for positive, 1 for
                                                 // negative
 
     for (size_t i = 0; i < op_length; ++i) {
         index = ((op[i] & 0x80) >> 7) & 0x01;
-        res[index_arr[index]] = i;
+        b = (-(uint64_t)op[i]) >> 63;
+        res[index_arr[index]] ^= (-b) & (res[index_arr[index]] ^ i);
         index_arr[index] += op[i];
     }
 
