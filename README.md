@@ -1,5 +1,5 @@
-# SMAUG_public
-SMAUG reference code (public release). 
+# SMAUG_private
+SMAUG reference code (private repository for preparing public release). 
 Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug).
 
 
