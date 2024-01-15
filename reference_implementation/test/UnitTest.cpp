@@ -8,7 +8,7 @@ extern "C" {
 #include "pack.h"
 #include "parameters.h"
 #include "poly.h"
-#include "rng.h"
+#include "randombytes.h"
 }
 
 template <class Ty>

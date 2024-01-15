@@ -1,5 +1,5 @@
 #include "indcpa.h"
-#include "rng.h"
+#include "randombytes.h"
 
 /*************************************************
  * Name:        genRx_vec

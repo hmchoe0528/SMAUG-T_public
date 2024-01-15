@@ -46,9 +46,8 @@ find_package(OpenSSL REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(LIB_RNG RNG)
-add_library(${LIB_RNG} ${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/rng.c)
+add_library(${LIB_RNG} ${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/randombytes.c)
 target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC)
-target_link_libraries(${LIB_RNG} PRIVATE OpenSSL::Crypto)
 
 set(LIB_FIPS202 FIPS202)
 add_library(${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/fips202.c)

@@ -5,7 +5,7 @@
 #include "pack.h"
 #include "parameters.h"
 #include "poly.h"
-#include "rng.h"
+#include "randombytes.h"
 #include <stdio.h>
 #include <time.h>
 
@@ -23,12 +23,6 @@ int main(void) {
 
     size_t count = 1;
     const size_t iteration = 100000;
-
-    uint8_t entropy_input[48] = {0};
-    for (size_t i = 0; i < 48; ++i) {
-        entropy_input[i] = i;
-    }
-    randombytes_init(entropy_input, NULL, 256);
 
     for (size_t i = 0; i < iteration; ++i) {
         if (!(i % (iteration / 10))) {

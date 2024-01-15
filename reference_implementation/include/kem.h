@@ -6,7 +6,7 @@
 #include "indcpa.h"
 #include "key.h"
 #include "parameters.h"
-#include "rng.h"
+#include "randombytes.h"
 #include "verify.h"
 
 #define crypto_kem_keypair SMAUG_NAMESPACE(crypto_kem_keypair)

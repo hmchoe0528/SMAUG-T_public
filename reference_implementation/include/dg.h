@@ -8,7 +8,7 @@
 
 #include "parameters.h"
 #include "poly.h"
-#include "rng.h"
+#include "randombytes.h"
 #include "verify.h"
 
 ////////////////////////////////////////////////////////////////////////////////

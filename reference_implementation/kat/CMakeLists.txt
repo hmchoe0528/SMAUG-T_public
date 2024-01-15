@@ -1,5 +1,6 @@
 set(kat_srcs
-    kat_kem.c
+    ${PROJECT_SOURCE_DIR}/kat/kat_kem.c
+    ${PROJECT_SOURCE_DIR}/src/rng.c
 )
 
 find_package(OpenSSL REQUIRED)

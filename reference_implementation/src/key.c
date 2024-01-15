@@ -1,6 +1,6 @@
 #include "key.h"
 #include "poly.h"
-#include "rng.h"
+#include "randombytes.h"
 #include <stdlib.h>
 #include <string.h>
 
