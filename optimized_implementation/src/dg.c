@@ -40,18 +40,13 @@
  * Description: Sample discret Gaussian noise e and add e to op
  *
  * Arguments:   - uint16_t *op: pointer to output vector op
- *              - uint8_t *seed: pointer to input seed of length CRYPTO_BYTES +
- *                               sizeof(size_t))
+ *              - uint64_t *seed: pointer to input seed of SEED_LEN)
  **************************************************/
-int addGaussianError(poly *op, const uint8_t *seed) {
-    uint64_t seed_temp[SEED_LEN] = {0};
-    shake128((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
-             CRYPTO_BYTES + sizeof(size_t));
-
+int addGaussianError(poly *op, uint64_t *seed) {
     uint16_t j = 0;
 
     for (size_t i = 0; i < LWE_N; i += 64) {
-        uint64_t *x = seed_temp + j;
+        uint64_t *x = seed + j;
 #ifdef NOISE_D1
         uint64_t s[2];
         s[0] = (x[0] & x[1] & x[2] & x[3] & x[4] & x[5] & x[7] & ~x[8]) |
@@ -200,11 +195,90 @@ int addGaussianError(poly *op, const uint8_t *seed) {
 }
 
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
-    uint8_t seed_tmp[CRYPTO_BYTES + sizeof(size_t)] = {0};
-    cmov(seed_tmp, seed, CRYPTO_BYTES, 1);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        size_t nonce = MODULE_RANK * i;
-        cmov(seed_tmp + CRYPTO_BYTES, (uint8_t *)&nonce, sizeof(size_t), 1);
-        addGaussianError(&(op->vec[i]), seed_tmp);
-    }
+    ALIGNED_UINT8(CRYPTO_BYTES + sizeof(size_t)) extseed[4];
+    __m256i f;
+    f = _mm256_loadu_si256((__m256i *)seed);
+
+#if MODULE_RANK == 2
+    _mm256_store_si256(extseed[0].vec, f);
+    _mm256_store_si256(extseed[1].vec, f);
+
+    size_t nonce[2] = {MODULE_RANK * 0, MODULE_RANK * 1};
+
+    cmov(extseed[0].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[0], sizeof(size_t),
+         1);
+    cmov(extseed[1].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[1], sizeof(size_t),
+         1);
+
+    ALIGNED_UINT64(SEED_LEN) seed_temp[4];
+    shake128x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+               (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
+               SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
+               extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
+               CRYPTO_BYTES + sizeof(size_t));
+
+    addGaussianError(&(op->vec[0]), seed_temp[0].coeffs);
+    addGaussianError(&(op->vec[1]), seed_temp[1].coeffs);
+#elif MODULE_RANK == 3
+    _mm256_store_si256(extseed[0].vec, f);
+    _mm256_store_si256(extseed[1].vec, f);
+    _mm256_store_si256(extseed[2].vec, f);
+
+    size_t nonce[3] = {MODULE_RANK * 0, MODULE_RANK * 1, MODULE_RANK * 2};
+
+    cmov(extseed[0].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[0], sizeof(size_t),
+         1);
+    cmov(extseed[1].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[1], sizeof(size_t),
+         1);
+    cmov(extseed[2].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[2], sizeof(size_t),
+         1);
+
+    ALIGNED_UINT64(SEED_LEN) seed_temp[4];
+    shake128x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+               (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
+               SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
+               extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
+               CRYPTO_BYTES + sizeof(size_t));
+
+    addGaussianError(&(op->vec[0]), seed_temp[0].coeffs);
+    addGaussianError(&(op->vec[1]), seed_temp[1].coeffs);
+    addGaussianError(&(op->vec[2]), seed_temp[2].coeffs);
+#elif MODULE_RANK == 5
+    _mm256_store_si256(extseed[0].vec, f);
+    _mm256_store_si256(extseed[1].vec, f);
+    _mm256_store_si256(extseed[2].vec, f);
+    _mm256_store_si256(extseed[3].vec, f);
+
+    // for (0 <= i < 5)
+    size_t nonce[5] = {MODULE_RANK * 0, MODULE_RANK * 1, MODULE_RANK * 2,
+                       MODULE_RANK * 3, MODULE_RANK * 4};
+
+    cmov(extseed[0].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[0], sizeof(size_t),
+         1);
+    cmov(extseed[1].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[1], sizeof(size_t),
+         1);
+    cmov(extseed[2].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[2], sizeof(size_t),
+         1);
+    cmov(extseed[3].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[3], sizeof(size_t),
+         1);
+
+    ALIGNED_UINT64(SEED_LEN) seed_temp[5];
+    shake128x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+               (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
+               SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
+               extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
+               CRYPTO_BYTES + sizeof(size_t));
+
+    // for remaining (i = 5)
+    cmov(extseed[3].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[4], sizeof(size_t),
+         1);
+    shake128((uint8_t *)seed_temp[4].coeffs, SEED_LEN * sizeof(uint64_t),
+             extseed[3].coeffs, CRYPTO_BYTES + sizeof(size_t));
+
+    addGaussianError(&(op->vec[0]), seed_temp[0].coeffs);
+    addGaussianError(&(op->vec[1]), seed_temp[1].coeffs);
+    addGaussianError(&(op->vec[2]), seed_temp[2].coeffs);
+    addGaussianError(&(op->vec[3]), seed_temp[3].coeffs);
+    addGaussianError(&(op->vec[4]), seed_temp[4].coeffs);
+#endif
 }

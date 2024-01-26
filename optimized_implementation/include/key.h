@@ -6,6 +6,7 @@
 
 #include "dg.h"
 #include "fips202.h"
+#include "fips202avx.h"
 #include "hwt.h"
 #include "pack.h"
 #include "poly.h"

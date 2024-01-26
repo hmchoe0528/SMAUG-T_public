@@ -139,4 +139,3 @@ BasedOnStyle:  LLVM
 # BreakBeforeBraces: Attach
 AlignTrailingComments: true
 IndentWidth: 4
----

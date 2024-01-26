@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(smaug LANGUAGES C CXX) # CXX for google test
+project(smaug LANGUAGES C CXX ASM) # CXX for google test
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/)
@@ -21,7 +21,7 @@ if(NOT CMAKE_BUILD_TYPE MATCHES Release)
   )
 endif(NOT CMAKE_BUILD_TYPE MATCHES Release)
 
-set(srcs
+set(SRCS
     ${PROJECT_SOURCE_DIR}/src/dg.c
     ${PROJECT_SOURCE_DIR}/src/pack.c
     ${PROJECT_SOURCE_DIR}/src/poly.c
@@ -35,30 +35,44 @@ set(srcs
     ${PROJECT_SOURCE_DIR}/src/verify.c
 )
 
+set(SRCS_RNG
+    ${PROJECT_SOURCE_DIR}/src/rng.c)
+
+set(SRCS_FIPS202
+    ${PROJECT_SOURCE_DIR}/src/keccak/KeccakP-1600-times4-SIMD256.c
+    ${PROJECT_SOURCE_DIR}/src/keccak/KeccakP-1600-AVX2.S
+    ${PROJECT_SOURCE_DIR}/src/fips202x4.c
+    ${PROJECT_SOURCE_DIR}/src/fips202avx.c
+    ${PROJECT_SOURCE_DIR}/src/fips202.c
+)
+
+
 if(MSVC)
   set(C_FLAGS /nologo /O2 /W4 /wd4146 /wd4244)
 else()
-  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra)
+  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra -mavx2)
 endif()
 
 find_package(OpenSSL REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include/keccak)
 
 set(LIB_RNG RNG)
-add_library(${LIB_RNG} ${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/randombytes.c)
+add_library(${LIB_RNG} SHARED ${SRCS_RNG})
 target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC)
+target_link_libraries(${LIB_RNG} PRIVATE OpenSSL::Crypto)
 
 set(LIB_FIPS202 FIPS202)
-add_library(${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/fips202.c)
-target_compile_options(${LIB_FIPS202} PRIVATE -O3 -fomit-frame-pointer -fPIC)
+add_library(${LIB_FIPS202} SHARED ${SRCS_FIPS202})
+target_compile_options(${LIB_FIPS202} PRIVATE ${C_FLAGS})
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy during build" OFF)
 if(ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY_EXECUTABLE clang-tidy)
 
   if(CLANG_TIDY_EXECUTABLE)
-    set(SOURCE_FILES_TO_CHECK ${srcs})
+    set(SOURCE_FILES_TO_CHECK ${SRCS})
 
     add_custom_target(clang-tidy
       COMMAND ${CLANG_TIDY_EXECUTABLE}
@@ -97,19 +111,19 @@ endif()
 
 
 set(LIB_NAME1 ${PROJECT_NAME}1)
-add_library(${LIB_NAME1} SHARED ${srcs})
+add_library(${LIB_NAME1} SHARED ${SRCS})
 target_compile_definitions(${LIB_NAME1} PUBLIC SMAUG_MODE=1)
 target_compile_options(${LIB_NAME1} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME1} PUBLIC ${LIB_RNG} ${LIB_FIPS202})
 
 set(LIB_NAME3 ${PROJECT_NAME}3)
-add_library(${LIB_NAME3} SHARED ${srcs})
+add_library(${LIB_NAME3} SHARED ${SRCS})
 target_compile_definitions(${LIB_NAME3} PUBLIC SMAUG_MODE=3)
 target_compile_options(${LIB_NAME3} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME3} PUBLIC ${LIB_RNG} ${LIB_FIPS202})
 
 set(LIB_NAME5 ${PROJECT_NAME}5)
-add_library(${LIB_NAME5} SHARED ${srcs})
+add_library(${LIB_NAME5} SHARED ${SRCS})
 target_compile_definitions(${LIB_NAME5} PUBLIC SMAUG_MODE=5)
 target_compile_options(${LIB_NAME5} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME5} PUBLIC ${LIB_RNG} ${LIB_FIPS202})

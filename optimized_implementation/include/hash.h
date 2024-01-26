@@ -2,9 +2,10 @@
 #define SMAUG_HASH_H
 
 #include "fips202.h"
+#include "fips202avx.h"
 #include "parameters.h"
 
-#define hash_h(OUT, IN, INBYTES) sha3_256(OUT, IN, INBYTES)
+#define hash_h(OUT, IN, INBYTES) sha3_256_avx(OUT, IN, INBYTES)
 #define hash_g(OUT, OUTBYTES, IN1, IN1BYTES, IN2, IN2BYTES)                    \
     shake256_absorb_twice_squeeze(OUT, OUTBYTES, IN1, IN1BYTES, IN2, IN2BYTES)
 

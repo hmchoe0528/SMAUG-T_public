@@ -1,11 +1,13 @@
 #ifndef SMAUG_DG_H
 #define SMAUG_DG_H
 
-#include <fips202.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "align.h"
+#include "fips202.h"
+#include "fips202x4.h"
 #include "parameters.h"
 #include "poly.h"
 #include "randombytes.h"
@@ -21,7 +23,7 @@
 
 // A discrete error distribution close to the discrete Gaussian distribution
 #define addGaussianError SMAUG_NAMESPACE(addGaussianError)
-int addGaussianError(poly *op, const uint8_t *seed);
+int addGaussianError(poly *op, uint64_t *seed);
 #define addGaussianErrorVec SMAUG_NAMESPACE(addGaussianErrorVec)
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]);
 
