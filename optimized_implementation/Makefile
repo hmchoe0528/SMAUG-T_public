@@ -9,7 +9,7 @@ CC ?= /usr/bin/cc
 RM = /bin/rm
 
 
-CFLAGS = -mtune=native -O3 -fomit-frame-pointer -mavx2
+CFLAGS = -march=native -mtune=native -O3 -fomit-frame-pointer -mavx2
 DFLAGS = -g3 -DDEBUG
 
 SOURCES = $(SRCDIR)/ciphertext.c $(SRCDIR)/dg.c $(SRCDIR)/hash.c $(SRCDIR)/hwt.c $(SRCDIR)/indcpa.c $(SRCDIR)/io.c $(SRCDIR)/kem.c $(SRCDIR)/key.c $(SRCDIR)/pack.c $(SRCDIR)/poly.c $(SRCDIR)/verify.c

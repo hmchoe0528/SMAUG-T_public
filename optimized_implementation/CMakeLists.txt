@@ -50,7 +50,7 @@ set(SRCS_FIPS202
 if(MSVC)
   set(C_FLAGS /nologo /O2 /W4 /wd4146 /wd4244)
 else()
-  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra -mavx2)
+  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra -march=native -mtune=native -mavx2)
 endif()
 
 find_package(OpenSSL REQUIRED)
