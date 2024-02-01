@@ -9,10 +9,7 @@
 #include "poly.h"
 #include "verify.h"
 
-#define R11_DATA_OFFSET LOG_Q
-#define R11_BYTE_OFFSET 8 // (bit size of uint8_t)
-#define R10_DATA_OFFSET (LOG_Q / 2)
-#define R10_BYTE_OFFSET (8 / 2) // (bit size of uint8_t) / 2
+#define DATA_OFFSET 16
 
 #define Rq_to_bytes SMAUG_NAMESPACE(Rq_to_bytes)
 void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data);

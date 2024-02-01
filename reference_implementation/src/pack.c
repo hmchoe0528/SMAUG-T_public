@@ -11,46 +11,53 @@
  *              - size_t dlen: date length
  **************************************************/
 void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
+    uint16_t tmp[LWE_N] = {0};
     int b_idx = 0, d_idx = 0;
 
 #if LOG_Q == 10
-    for (size_t i = 0; i < LWE_N / 4; i++) {
-        b_idx = R10_DATA_OFFSET * i;
-        d_idx = R10_BYTE_OFFSET * i;
-        bytes[b_idx] = (data->coeffs[d_idx] & 0xff);
-        bytes[b_idx + 1] = (data->coeffs[d_idx + 1] & 0xff);
-        bytes[b_idx + 2] = (data->coeffs[d_idx + 2] & 0xff);
-        bytes[b_idx + 3] = (data->coeffs[d_idx + 3] & 0xff);
-        bytes[b_idx + 4] = ((data->coeffs[d_idx] >> 8) & 0x03) |
-                           ((data->coeffs[d_idx + 1] >> 6) & 0x0c) |
-                           ((data->coeffs[d_idx + 2] >> 4) & 0x30) |
-                           ((data->coeffs[d_idx + 3] >> 2) & 0xc0);
+    for (int i = 0; i < LWE_N; ++i) {
+        bytes[i] = data->coeffs[i] >> 8;
+        tmp[i] = data->coeffs[i] & 0x00c0;
     }
+    uint16_t buf[DATA_OFFSET * 2] = {0};
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < DATA_OFFSET; ++j) {
+            buf[b_idx + j] = tmp[d_idx + j] << 8;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET + j] << 6;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 2 + j] << 4;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 3 + j] << 2;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 4 + j];
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 5 + j] >> 2;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 6 + j] >> 4;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 7 + j] >> 6;
+        }
+        b_idx += DATA_OFFSET;
+        d_idx += DATA_OFFSET * 8;
+    }
+    memcpy(bytes + LWE_N, (uint8_t *)buf, DATA_OFFSET * 2 * sizeof(uint16_t));
 #endif
 
 #if LOG_Q == 11
-    for (size_t i = 0; i < LWE_N / 8; ++i) {
-        b_idx = R11_DATA_OFFSET * i;
-        d_idx = R11_BYTE_OFFSET * i;
-        bytes[b_idx] = data->coeffs[d_idx] & 0xff;
-        bytes[b_idx + 1] = ((data->coeffs[d_idx] >> 3) & 0xe0) |
-                           (data->coeffs[d_idx + 1] & 0x1f);
-        bytes[b_idx + 2] = ((data->coeffs[d_idx + 1] >> 3) & 0xfc) |
-                           (data->coeffs[d_idx + 2] & 0x03);
-        bytes[b_idx + 3] = (data->coeffs[d_idx + 2] >> 2) & 0xff;
-        bytes[b_idx + 4] = ((data->coeffs[d_idx + 2] >> 3) & 0x80) |
-                           (data->coeffs[d_idx + 3] & 0x7f);
-        bytes[b_idx + 5] = ((data->coeffs[d_idx + 3] >> 3) & 0xf0) |
-                           (data->coeffs[d_idx + 4] & 0x0f);
-        bytes[b_idx + 6] = ((data->coeffs[d_idx + 4] >> 3) & 0xfe) |
-                           (data->coeffs[d_idx + 5] & 0x01);
-        bytes[b_idx + 7] = (data->coeffs[d_idx + 5] >> 1) & 0xff;
-        bytes[b_idx + 8] = ((data->coeffs[d_idx + 5] >> 3) & 0xc0) |
-                           (data->coeffs[d_idx + 6] & 0x3f);
-        bytes[b_idx + 9] = ((data->coeffs[d_idx + 6] >> 3) & 0xf8) |
-                           (data->coeffs[d_idx + 7] & 0x07);
-        bytes[b_idx + 10] = (data->coeffs[d_idx + 7] >> 3) & 0xff;
+    for (int i = 0; i < LWE_N; ++i) {
+        bytes[i] = data->coeffs[i] >> 8;
+        tmp[i] = data->coeffs[i] & 0x00e0;
     }
+    int shift = 5;
+    uint16_t buf[DATA_OFFSET * 3] = {0};
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < DATA_OFFSET; ++j) {
+            buf[b_idx + j] = (tmp[j] >> shift) & 0x01;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET + j] << 8;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 2 + j] << 5;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 3 + j] << 2;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 4 + j] >> 1;
+            buf[b_idx + j] |= tmp[d_idx + DATA_OFFSET * 5 + j] >> 4;
+        }
+        b_idx += DATA_OFFSET;
+        d_idx += DATA_OFFSET * 5;
+        shift++;
+    }
+    memcpy(bytes + LWE_N, (uint8_t *)buf, DATA_OFFSET * 3 * sizeof(uint16_t));
 #endif
 }
 
@@ -64,45 +71,57 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
  *              - size_t dlen: date length
  **************************************************/
 void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
+    uint16_t tmp[LWE_N] = {0};
     int b_idx = 0, d_idx = 0;
+
 #if LOG_Q == 10
-    for (size_t i = 0; i < LWE_N / 4; i++) {
-        b_idx = R10_DATA_OFFSET * i;
-        d_idx = R10_BYTE_OFFSET * i;
-        data->coeffs[d_idx] =
-            (((uint16_t)bytes[b_idx + 4] & 0x03) << 8) | (bytes[b_idx] & 0xff);
-        data->coeffs[d_idx + 1] =
-            ((bytes[b_idx + 4] & 0x0c) << 6) | (bytes[b_idx + 1] & 0xff);
-        data->coeffs[d_idx + 2] =
-            ((bytes[b_idx + 4] & 0x30) << 4) | (bytes[b_idx + 2] & 0xff);
-        data->coeffs[d_idx + 3] =
-            ((bytes[b_idx + 4] & 0xc0) << 2) | (bytes[b_idx + 3] & 0xff);
+    for (int i = 0; i < LWE_N; ++i)
+        data->coeffs[i] = (uint16_t)bytes[i] << 8;
+
+    uint16_t buf[DATA_OFFSET * 2] = {0};
+    memcpy((uint8_t *)buf, bytes + LWE_N, DATA_OFFSET * 2 * sizeof(uint16_t));
+
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < DATA_OFFSET; ++j) {
+            tmp[d_idx + j] = buf[b_idx + j] >> 8;
+            tmp[d_idx + DATA_OFFSET + j] = buf[b_idx + j] >> 6;
+            tmp[d_idx + DATA_OFFSET * 2 + j] = buf[b_idx + j] >> 4;
+            tmp[d_idx + DATA_OFFSET * 3 + j] = buf[b_idx + j] >> 2;
+            tmp[d_idx + DATA_OFFSET * 4 + j] = buf[b_idx + j];
+            tmp[d_idx + DATA_OFFSET * 5 + j] = buf[b_idx + j] << 2;
+            tmp[d_idx + DATA_OFFSET * 6 + j] = buf[b_idx + j] << 4;
+            tmp[d_idx + DATA_OFFSET * 7 + j] = buf[b_idx + j] << 6;
+        }
+        b_idx += DATA_OFFSET;
+        d_idx += DATA_OFFSET * 8;
     }
+    for (int i = 0; i < LWE_N; ++i)
+        data->coeffs[i] |= tmp[i] & 0x00c0;
 #endif
 
 #if LOG_Q == 11
-    for (size_t i = 0; i < LWE_N / 8; ++i) {
-        b_idx = R11_DATA_OFFSET * i;
-        d_idx = R11_BYTE_OFFSET * i;
-        data->coeffs[d_idx] =
-            (((uint16_t)bytes[b_idx + 1] & 0xe0) << 3) | (bytes[b_idx] & 0xff);
-        data->coeffs[d_idx + 1] = (((uint16_t)bytes[b_idx + 2] & 0xfc) << 3) |
-                                  (bytes[b_idx + 1] & 0x1f);
-        data->coeffs[d_idx + 2] = (((uint16_t)bytes[b_idx + 4] & 0x80) << 3) |
-                                  (((uint16_t)bytes[b_idx + 3] & 0xff) << 2) |
-                                  (bytes[b_idx + 2] & 0x03);
-        data->coeffs[d_idx + 3] = (((uint16_t)bytes[b_idx + 5] & 0xf0) << 3) |
-                                  (bytes[b_idx + 4] & 0x7f);
-        data->coeffs[d_idx + 4] = (((uint16_t)bytes[b_idx + 6] & 0xfe) << 3) |
-                                  (bytes[b_idx + 5] & 0x0f);
-        data->coeffs[d_idx + 5] = (((uint16_t)bytes[b_idx + 8] & 0xc0) << 3) |
-                                  (((uint16_t)bytes[b_idx + 7] & 0xff) << 1) |
-                                  (bytes[b_idx + 6] & 0x01);
-        data->coeffs[d_idx + 6] = (((uint16_t)bytes[b_idx + 9] & 0xf8) << 3) |
-                                  (bytes[b_idx + 8] & 0x3f);
-        data->coeffs[d_idx + 7] = (((uint16_t)bytes[b_idx + 10] & 0xff) << 3) |
-                                  (bytes[b_idx + 9] & 0x07);
+    for (int i = 0; i < LWE_N; ++i)
+        data->coeffs[i] = (uint16_t)bytes[i] << 8;
+
+    uint16_t buf[DATA_OFFSET * 3] = {0};
+    memcpy((uint8_t *)buf, bytes + LWE_N, DATA_OFFSET * 3 * sizeof(uint16_t));
+
+    int shift = 5;
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < DATA_OFFSET; ++j) {
+            tmp[j] |= (buf[b_idx + j] & 0x01) << shift;
+            tmp[d_idx + DATA_OFFSET + j] = buf[b_idx + j] >> 8;
+            tmp[d_idx + DATA_OFFSET * 2 + j] = buf[b_idx + j] >> 5;
+            tmp[d_idx + DATA_OFFSET * 3 + j] = buf[b_idx + j] >> 2;
+            tmp[d_idx + DATA_OFFSET * 4 + j] = buf[b_idx + j] << 1;
+            tmp[d_idx + DATA_OFFSET * 5 + j] = buf[b_idx + j] << 4;
+        }
+        b_idx += DATA_OFFSET;
+        d_idx += DATA_OFFSET * 5;
+        shift++;
     }
+    for (int i = 0; i < LWE_N; ++i)
+        data->coeffs[i] |= tmp[i] & 0x00e0;
 #endif
 }
 

@@ -18,13 +18,6 @@ void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {
     uint8_t buf[PKPOLYMAT_BYTES] = {0};
     shake128_avx(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
     bytes_to_Rq_mat(A, buf);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        for (size_t j = 0; j < MODULE_RANK; ++j) {
-            for (size_t k = 0; k < LWE_N; ++k) {
-                A[i].vec[j].coeffs[k] <<= _16_LOG_Q;
-            }
-        }
-    }
 }
 
 /*************************************************

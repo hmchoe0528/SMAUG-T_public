@@ -1,14 +1,13 @@
 #ifndef SMAUG_POLY_H
 #define SMAUG_POLY_H
 
+#include "align.h"
 #include "parameters.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct {
-    uint16_t coeffs[LWE_N];
-} poly;
+typedef ALIGNED_UINT16(LWE_N) poly;
 
 typedef struct {
     poly vec[MODULE_RANK];

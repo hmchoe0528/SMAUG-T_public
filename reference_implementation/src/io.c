@@ -107,13 +107,8 @@ void load_from_file_sk(uint8_t *sk, const char *file_path, const int isPKE) {
 /*----------------------------------------------------------------------------*/
 
 void save_to_string_pk(uint8_t *output, const public_key *pk) {
-    polyvec vec_tmp;
-    memset(&vec_tmp, 0, sizeof(polyvec));
     memcpy(output, pk->seed, sizeof(uint8_t) * PKSEED_BYTES);
-    for (int i = 0; i < MODULE_RANK; i++)
-        for (int j = 0; j < LWE_N; j++)
-            vec_tmp.vec[i].coeffs[j] = (pk->b.vec[i].coeffs[j] >> _16_LOG_Q);
-    Rq_vec_to_bytes(output + PKSEED_BYTES, &vec_tmp);
+    Rq_vec_to_bytes(output + PKSEED_BYTES, &(pk->b));
 }
 
 void save_to_file_pk(char *file_path, const uint8_t *pk) {
@@ -127,13 +122,9 @@ void save_to_file_pk(char *file_path, const uint8_t *pk) {
 }
 
 void load_from_string_pk(public_key *pk, const uint8_t *input) {
-    polyvec poly_vec;
     memcpy(pk->seed, input, PKSEED_BYTES);
     genAx(pk->A, pk->seed);
-    bytes_to_Rq_vec(&poly_vec, input + PKSEED_BYTES);
-    for (int i = 0; i < MODULE_RANK; i++)
-        for (int j = 0; j < LWE_N; j++)
-            pk->b.vec[i].coeffs[j] = (poly_vec.vec[i].coeffs[j] << _16_LOG_Q);
+    bytes_to_Rq_vec(&(pk->b), input + PKSEED_BYTES);
 }
 
 void load_from_file_pk(uint8_t *pk, const char *file_path) {

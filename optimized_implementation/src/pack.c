@@ -11,46 +11,73 @@
  *              - size_t dlen: date length
  **************************************************/
 void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
-    int b_idx = 0, d_idx = 0;
+    ALIGNED_UINT16(LWE_N) tmp;
 
 #if LOG_Q == 10
-    for (size_t i = 0; i < LWE_N / 4; i++) {
-        b_idx = R10_DATA_OFFSET * i;
-        d_idx = R10_BYTE_OFFSET * i;
-        bytes[b_idx] = (data->coeffs[d_idx] & 0xff);
-        bytes[b_idx + 1] = (data->coeffs[d_idx + 1] & 0xff);
-        bytes[b_idx + 2] = (data->coeffs[d_idx + 2] & 0xff);
-        bytes[b_idx + 3] = (data->coeffs[d_idx + 3] & 0xff);
-        bytes[b_idx + 4] = ((data->coeffs[d_idx] >> 8) & 0x03) |
-                           ((data->coeffs[d_idx + 1] >> 6) & 0x0c) |
-                           ((data->coeffs[d_idx + 2] >> 4) & 0x30) |
-                           ((data->coeffs[d_idx + 3] >> 2) & 0xc0);
+    for (int i = 0; i < LWE_N; ++i)
+        bytes[i] = data->coeffs[i] >> 8;
+
+    __m256i mask = _mm256_set1_epi16(3 << 6); // 0x00c0
+    for (int i = 0; i < LWE_N / 16; ++i)
+        tmp.vec[i] = _mm256_and_si256(data->vec[i], mask);
+
+    __m256i f;
+    int d_idx = 0;
+    ALIGNED_UINT16(DATA_OFFSET * 2) buf;
+    for (int i = 0; i < 2; ++i) {
+        f = _mm256_slli_epi16(tmp.vec[d_idx], 8);
+        buf.vec[i] = _mm256_or_si256(f, tmp.vec[d_idx + 4]);
+        f = _mm256_slli_epi16(tmp.vec[d_idx + 1], 6);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_slli_epi16(tmp.vec[d_idx + 2], 4);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_slli_epi16(tmp.vec[d_idx + 3], 2);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_srli_epi16(tmp.vec[d_idx + 5], 2);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_srli_epi16(tmp.vec[d_idx + 6], 4);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_srli_epi16(tmp.vec[d_idx + 7], 6);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+
+        d_idx += 8;
     }
+    memcpy(bytes + LWE_N, (uint8_t *)buf.coeffs,
+           DATA_OFFSET * 2 * sizeof(uint16_t));
 #endif
 
 #if LOG_Q == 11
-    for (size_t i = 0; i < LWE_N / 8; ++i) {
-        b_idx = R11_DATA_OFFSET * i;
-        d_idx = R11_BYTE_OFFSET * i;
-        bytes[b_idx] = data->coeffs[d_idx] & 0xff;
-        bytes[b_idx + 1] = ((data->coeffs[d_idx] >> 3) & 0xe0) |
-                           (data->coeffs[d_idx + 1] & 0x1f);
-        bytes[b_idx + 2] = ((data->coeffs[d_idx + 1] >> 3) & 0xfc) |
-                           (data->coeffs[d_idx + 2] & 0x03);
-        bytes[b_idx + 3] = (data->coeffs[d_idx + 2] >> 2) & 0xff;
-        bytes[b_idx + 4] = ((data->coeffs[d_idx + 2] >> 3) & 0x80) |
-                           (data->coeffs[d_idx + 3] & 0x7f);
-        bytes[b_idx + 5] = ((data->coeffs[d_idx + 3] >> 3) & 0xf0) |
-                           (data->coeffs[d_idx + 4] & 0x0f);
-        bytes[b_idx + 6] = ((data->coeffs[d_idx + 4] >> 3) & 0xfe) |
-                           (data->coeffs[d_idx + 5] & 0x01);
-        bytes[b_idx + 7] = (data->coeffs[d_idx + 5] >> 1) & 0xff;
-        bytes[b_idx + 8] = ((data->coeffs[d_idx + 5] >> 3) & 0xc0) |
-                           (data->coeffs[d_idx + 6] & 0x3f);
-        bytes[b_idx + 9] = ((data->coeffs[d_idx + 6] >> 3) & 0xf8) |
-                           (data->coeffs[d_idx + 7] & 0x07);
-        bytes[b_idx + 10] = (data->coeffs[d_idx + 7] >> 3) & 0xff;
+    for (int i = 0; i < LWE_N; ++i)
+        bytes[i] = data->coeffs[i] >> 8;
+
+    __m256i mask = _mm256_set1_epi16(7 << 5); // 0x00e0
+    for (int i = 0; i < LWE_N / 16; ++i)
+        tmp.vec[i] = _mm256_and_si256(data->vec[i], mask);
+
+    __m256i f;
+    int d_idx = 1;
+    int shift = 5;
+    mask = _mm256_set1_epi16(1); // 0x0001
+    ALIGNED_UINT16(DATA_OFFSET * 3) buf;
+    for (int i = 0; i < 3; ++i) {
+        f = _mm256_srli_epi16(tmp.vec[0], shift);
+        buf.vec[i] = _mm256_and_si256(f, mask);
+        f = _mm256_slli_epi16(tmp.vec[d_idx], 8);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_slli_epi16(tmp.vec[d_idx + 1], 5);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_slli_epi16(tmp.vec[d_idx + 2], 2);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_srli_epi16(tmp.vec[d_idx + 3], 1);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+        f = _mm256_srli_epi16(tmp.vec[d_idx + 4], 4);
+        buf.vec[i] = _mm256_or_si256(f, buf.vec[i]);
+
+        d_idx += 5;
+        shift++;
     }
+    memcpy(bytes + LWE_N, (uint8_t *)buf.coeffs,
+           DATA_OFFSET * 3 * sizeof(uint16_t));
 #endif
 }
 
@@ -64,44 +91,66 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
  *              - size_t dlen: date length
  **************************************************/
 void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
-    int b_idx = 0, d_idx = 0;
+    ALIGNED_UINT16(LWE_N) tmp;
+
 #if LOG_Q == 10
-    for (size_t i = 0; i < LWE_N / 4; i++) {
-        b_idx = R10_DATA_OFFSET * i;
-        d_idx = R10_BYTE_OFFSET * i;
-        data->coeffs[d_idx] =
-            (((uint16_t)bytes[b_idx + 4] & 0x03) << 8) | (bytes[b_idx] & 0xff);
-        data->coeffs[d_idx + 1] =
-            ((bytes[b_idx + 4] & 0x0c) << 6) | (bytes[b_idx + 1] & 0xff);
-        data->coeffs[d_idx + 2] =
-            ((bytes[b_idx + 4] & 0x30) << 4) | (bytes[b_idx + 2] & 0xff);
-        data->coeffs[d_idx + 3] =
-            ((bytes[b_idx + 4] & 0xc0) << 2) | (bytes[b_idx + 3] & 0xff);
+    for (int i = 0; i < LWE_N; ++i)
+        data->coeffs[i] = ((uint16_t)bytes[i] << 8) & 0xff00;
+
+    ALIGNED_UINT16(DATA_OFFSET * 2) buf;
+    memcpy((uint8_t *)buf.coeffs, bytes + LWE_N,
+           DATA_OFFSET * 2 * sizeof(uint16_t));
+
+    int d_idx = 0;
+    for (int i = 0; i < 2; ++i) {
+        tmp.vec[d_idx] = _mm256_srli_epi16(buf.vec[i], 8);
+        tmp.vec[d_idx + 1] = _mm256_srli_epi16(buf.vec[i], 6);
+        tmp.vec[d_idx + 2] = _mm256_srli_epi16(buf.vec[i], 4);
+        tmp.vec[d_idx + 3] = _mm256_srli_epi16(buf.vec[i], 2);
+        tmp.vec[d_idx + 4] = _mm256_load_si256(&(buf.vec[i]));
+        tmp.vec[d_idx + 5] = _mm256_slli_epi16(buf.vec[i], 2);
+        tmp.vec[d_idx + 6] = _mm256_slli_epi16(buf.vec[i], 4);
+        tmp.vec[d_idx + 7] = _mm256_slli_epi16(buf.vec[i], 6);
+
+        d_idx += 8;
+    }
+    __m256i mask = _mm256_set1_epi16(3 << 6); // 0x00c0
+    for (int i = 0; i < LWE_N / 16; ++i) {
+        tmp.vec[i] = _mm256_and_si256(tmp.vec[i], mask);
+        data->vec[i] = _mm256_or_si256(tmp.vec[i], data->vec[i]);
     }
 #endif
 
 #if LOG_Q == 11
-    for (size_t i = 0; i < LWE_N / 8; ++i) {
-        b_idx = R11_DATA_OFFSET * i;
-        d_idx = R11_BYTE_OFFSET * i;
-        data->coeffs[d_idx] =
-            (((uint16_t)bytes[b_idx + 1] & 0xe0) << 3) | (bytes[b_idx] & 0xff);
-        data->coeffs[d_idx + 1] = (((uint16_t)bytes[b_idx + 2] & 0xfc) << 3) |
-                                  (bytes[b_idx + 1] & 0x1f);
-        data->coeffs[d_idx + 2] = (((uint16_t)bytes[b_idx + 4] & 0x80) << 3) |
-                                  (((uint16_t)bytes[b_idx + 3] & 0xff) << 2) |
-                                  (bytes[b_idx + 2] & 0x03);
-        data->coeffs[d_idx + 3] = (((uint16_t)bytes[b_idx + 5] & 0xf0) << 3) |
-                                  (bytes[b_idx + 4] & 0x7f);
-        data->coeffs[d_idx + 4] = (((uint16_t)bytes[b_idx + 6] & 0xfe) << 3) |
-                                  (bytes[b_idx + 5] & 0x0f);
-        data->coeffs[d_idx + 5] = (((uint16_t)bytes[b_idx + 8] & 0xc0) << 3) |
-                                  (((uint16_t)bytes[b_idx + 7] & 0xff) << 1) |
-                                  (bytes[b_idx + 6] & 0x01);
-        data->coeffs[d_idx + 6] = (((uint16_t)bytes[b_idx + 9] & 0xf8) << 3) |
-                                  (bytes[b_idx + 8] & 0x3f);
-        data->coeffs[d_idx + 7] = (((uint16_t)bytes[b_idx + 10] & 0xff) << 3) |
-                                  (bytes[b_idx + 9] & 0x07);
+    for (int i = 0; i < LWE_N; ++i)
+        data->coeffs[i] = ((uint16_t)bytes[i] << 8) & 0xff00;
+
+    ALIGNED_UINT16(DATA_OFFSET * 3) buf;
+    memcpy((uint8_t *)buf.coeffs, bytes + LWE_N,
+           DATA_OFFSET * 3 * sizeof(uint16_t));
+
+    __m256i f;
+    int d_idx = 1;
+    int shift = 5;
+    __m256i mask = _mm256_set1_epi16(1); // 0x0001
+    tmp.vec[0] = _mm256_set1_epi16(0);
+    for (int i = 0; i < 3; ++i) {
+        f = _mm256_and_si256(buf.vec[i], mask);
+        f = _mm256_slli_epi16(f, shift);
+        tmp.vec[0] = _mm256_or_si256(tmp.vec[0], f);
+        tmp.vec[d_idx] = _mm256_srli_epi16(buf.vec[i], 8);
+        tmp.vec[d_idx + 1] = _mm256_srli_epi16(buf.vec[i], 5);
+        tmp.vec[d_idx + 2] = _mm256_srli_epi16(buf.vec[i], 2);
+        tmp.vec[d_idx + 3] = _mm256_slli_epi16(buf.vec[i], 1);
+        tmp.vec[d_idx + 4] = _mm256_slli_epi16(buf.vec[i], 4);
+
+        d_idx += 5;
+        shift++;
+    }
+    mask = _mm256_set1_epi16(7 << 5); // 0x00e0
+    for (int i = 0; i < LWE_N / 16; ++i) {
+        tmp.vec[i] = _mm256_and_si256(tmp.vec[i], mask);
+        data->vec[i] = _mm256_or_si256(tmp.vec[i], data->vec[i]);
     }
 #endif
 }
