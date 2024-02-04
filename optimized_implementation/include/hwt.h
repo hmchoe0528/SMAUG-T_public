@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "fips202.h"
-#include "fips202avx.h"
 #include "parameters.h"
 
 #if SMAUG_MODE == 1

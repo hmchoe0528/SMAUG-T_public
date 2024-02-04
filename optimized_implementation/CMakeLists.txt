@@ -42,7 +42,6 @@ set(SRCS_FIPS202
     ${PROJECT_SOURCE_DIR}/src/keccak/KeccakP-1600-times4-SIMD256.c
     ${PROJECT_SOURCE_DIR}/src/keccak/KeccakP-1600-AVX2.S
     ${PROJECT_SOURCE_DIR}/src/fips202x4.c
-    ${PROJECT_SOURCE_DIR}/src/fips202avx.c
     ${PROJECT_SOURCE_DIR}/src/fips202.c
 )
 

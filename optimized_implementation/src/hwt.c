@@ -21,7 +21,7 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
     uint32_t buf[SHAKE256_RATE * 2] = {0};
 
     uint8_t xof_block = (hmwt == HS) ? HS_XOF : HR_XOF;
-    shake256_avx((uint8_t *)buf, xof_block * SHAKE256_RATE, input, input_size);
+    shake256((uint8_t *)buf, xof_block * SHAKE256_RATE, input, input_size);
 
     for (i = DIMENSION - hmwt; i < DIMENSION; ++i) {
         uint64_t deg_tmp = 0;

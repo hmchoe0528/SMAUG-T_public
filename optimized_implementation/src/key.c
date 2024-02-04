@@ -16,7 +16,7 @@
  **************************************************/
 void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {
     uint8_t buf[PKPOLYMAT_BYTES] = {0};
-    shake128_avx(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
+    shake128(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
     bytes_to_Rq_mat(A, buf);
 }
 
@@ -81,7 +81,7 @@ void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
  **************************************************/
 void genPubkey(public_key *pk, const secret_key *sk,
                const uint8_t err_seed[CRYPTO_BYTES]) {
-    shake128_avx(pk->seed, PKSEED_BYTES, pk->seed, PKSEED_BYTES);
+    shake128(pk->seed, PKSEED_BYTES, pk->seed, PKSEED_BYTES);
     genAx(pk->A, pk->seed);
 
     memset(&(pk->b), 0, sizeof(uint16_t) * LWE_N);
