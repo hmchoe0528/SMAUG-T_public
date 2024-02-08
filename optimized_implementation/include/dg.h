@@ -6,11 +6,10 @@
 #include <string.h>
 
 #include "align.h"
-#include "fips202.h"
-#include "fips202x4.h"
 #include "parameters.h"
 #include "poly.h"
 #include "randombytes.h"
+#include "symmetric.h"
 #include "verify.h"
 
 ////////////////////////////////////////////////////////////////////////////////

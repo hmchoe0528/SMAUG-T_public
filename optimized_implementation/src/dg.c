@@ -24,6 +24,7 @@
 #endif
 
 #define SEED_LEN (RAND_BITS * LWE_N / 64) // 64bit seed length
+#define SEED_BYTES (SEED_LEN * sizeof(uint64_t))
 
 // referenced
 // A. Karmakar, S. S. Roy, O. Reparaz, F. Vercauteren and I.
@@ -195,6 +196,23 @@ int addGaussianError(poly *op, uint64_t *seed) {
 }
 
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
+#ifdef SYMMETRIC_90S
+#define NBLOCKS (SEED_BYTES + (AES256CTR_BLOCKBYTES - 1)) / AES256CTR_BLOCKBYTES
+    size_t nonce = 0;
+    ALIGNED_UINT64(SEED_LEN) seed_temp;
+    ALIGNED_UINT8(NBLOCKS * AES256CTR_BLOCKBYTES) buf;
+
+    aes256ctr_ctx state;
+    aes256ctr_init(&state, seed, nonce);
+    for (int i = 0; i < MODULE_RANK; ++i) {
+        aes256ctr_squeezeblocks(buf.coeffs, NBLOCKS, &state);
+        state.n = _mm_loadl_epi64((__m128i *)&nonce);
+        nonce += MODULE_RANK;
+
+        cmov((uint8_t *)seed_temp.coeffs, buf.coeffs, SEED_BYTES, 1);
+        addGaussianError(&(op->vec[i]), seed_temp.coeffs);
+    }
+#else
     ALIGNED_UINT8(CRYPTO_BYTES + sizeof(size_t)) extseed[4];
     __m256i f;
     f = _mm256_loadu_si256((__m256i *)seed);
@@ -280,5 +298,6 @@ void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
     addGaussianError(&(op->vec[2]), seed_temp[2].coeffs);
     addGaussianError(&(op->vec[3]), seed_temp[3].coeffs);
     addGaussianError(&(op->vec[4]), seed_temp[4].coeffs);
+#endif
 #endif
 }

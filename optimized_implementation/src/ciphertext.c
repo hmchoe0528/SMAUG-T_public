@@ -1,5 +1,4 @@
 #include "ciphertext.h"
-#include "hash.h"
 #include "pack.h"
 
 /*************************************************

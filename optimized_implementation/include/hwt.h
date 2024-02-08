@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fips202.h"
 #include "parameters.h"
+#include "symmetric.h"
 
 #if SMAUG_MODE == 1
 #define HS_XOF 5

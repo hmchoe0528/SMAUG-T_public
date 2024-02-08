@@ -5,10 +5,10 @@
 #include <stdio.h>
 
 #include "dg.h"
-#include "fips202.h"
 #include "hwt.h"
 #include "pack.h"
 #include "poly.h"
+#include "symmetric.h"
 
 typedef struct SecretKey {
     sppoly sp_vec[MODULE_RANK];

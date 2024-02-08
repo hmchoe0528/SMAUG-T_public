@@ -46,7 +46,7 @@ void indcpa_keypair(uint8_t pk[PUBLICKEY_BYTES],
 
     uint8_t seed[CRYPTO_BYTES + PKSEED_BYTES] = {0};
     randombytes(seed, CRYPTO_BYTES);
-    shake128(seed, CRYPTO_BYTES + PKSEED_BYTES, seed, CRYPTO_BYTES);
+    xof(seed, CRYPTO_BYTES + PKSEED_BYTES, seed, CRYPTO_BYTES);
 
     genSx_vec(&sk_tmp, seed);
 

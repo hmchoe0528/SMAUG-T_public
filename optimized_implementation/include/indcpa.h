@@ -2,11 +2,11 @@
 #define SMAUG_IND_CPA_PKE_H
 
 #include "ciphertext.h"
-#include "hash.h"
 #include "hwt.h"
 #include "io.h"
 #include "key.h"
 #include "parameters.h"
+#include "symmetric.h"
 #include "verify.h"
 
 #define genRx_vec SMAUG_NAMESPACE(genRx_vec)

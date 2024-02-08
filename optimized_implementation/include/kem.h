@@ -2,11 +2,12 @@
 #define SMAUG_KEM_H
 
 #include "ciphertext.h"
-#include "hash.h"
+#include "fips202.h"
 #include "indcpa.h"
 #include "key.h"
 #include "parameters.h"
 #include "randombytes.h"
+#include "symmetric.h"
 #include "verify.h"
 
 #define crypto_kem_keypair SMAUG_NAMESPACE(crypto_kem_keypair)

@@ -31,7 +31,6 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/kem.c
     ${PROJECT_SOURCE_DIR}/src/io.c
     ${PROJECT_SOURCE_DIR}/src/indcpa.c
-    ${PROJECT_SOURCE_DIR}/src/hash.c
     ${PROJECT_SOURCE_DIR}/src/verify.c
 )
 
@@ -49,7 +48,7 @@ set(SRCS_FIPS202
 if(MSVC)
   set(C_FLAGS /nologo /O2 /W4 /wd4146 /wd4244)
 else()
-  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra -march=native -mtune=native -mavx2)
+  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra -march=native -mtune=native -mavx2 -mbmi2 -mpopcnt)
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -109,23 +108,53 @@ if(ENABLE_CPPCHECK)
 endif()
 
 
+set(SRCS_KECCAK ${SRCS} ${PROJECT_SOURCE_DIR}/src/hash.c)
+
 set(LIB_NAME1 ${PROJECT_NAME}1)
-add_library(${LIB_NAME1} SHARED ${SRCS})
+add_library(${LIB_NAME1} SHARED ${SRCS_KECCAK})
 target_compile_definitions(${LIB_NAME1} PUBLIC SMAUG_MODE=1)
 target_compile_options(${LIB_NAME1} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME1} PUBLIC ${LIB_RNG} ${LIB_FIPS202})
 
 set(LIB_NAME3 ${PROJECT_NAME}3)
-add_library(${LIB_NAME3} SHARED ${SRCS})
+add_library(${LIB_NAME3} SHARED ${SRCS_KECCAK})
 target_compile_definitions(${LIB_NAME3} PUBLIC SMAUG_MODE=3)
 target_compile_options(${LIB_NAME3} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME3} PUBLIC ${LIB_RNG} ${LIB_FIPS202})
 
 set(LIB_NAME5 ${PROJECT_NAME}5)
-add_library(${LIB_NAME5} SHARED ${SRCS})
+add_library(${LIB_NAME5} SHARED ${SRCS_KECCAK})
 target_compile_definitions(${LIB_NAME5} PUBLIC SMAUG_MODE=5)
 target_compile_options(${LIB_NAME5} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME5} PUBLIC ${LIB_RNG} ${LIB_FIPS202})
+
+
+option(ENABLE_SYMMETRIC_90S "Enable 90s symmetric" ON)
+if(ENABLE_SYMMETRIC_90S)
+  set(SRCS_90S ${SRCS}
+    ${PROJECT_SOURCE_DIR}/src/aes256ctr.c
+    ${PROJECT_SOURCE_DIR}/src/symmetric.c
+  )
+  set(C_FLAGS ${C_FLAGS} -maes)
+
+  set(LIB_90S_NAME1 ${PROJECT_NAME}1-90s)
+  add_library(${LIB_90S_NAME1} SHARED ${SRCS_90S})
+  target_compile_definitions(${LIB_90S_NAME1} PUBLIC SMAUG_MODE=1 SYMMETRIC_90S)
+  target_compile_options(${LIB_90S_NAME1} PRIVATE ${C_FLAGS})
+  target_link_libraries(${LIB_90S_NAME1} PUBLIC ${LIB_RNG})
+
+  set(LIB_90S_NAME3 ${PROJECT_NAME}3-90s)
+  add_library(${LIB_90S_NAME3} SHARED ${SRCS_90S})
+  target_compile_definitions(${LIB_90S_NAME3} PUBLIC SMAUG_MODE=3 SYMMETRIC_90S)
+  target_compile_options(${LIB_90S_NAME3} PRIVATE ${C_FLAGS})
+  target_link_libraries(${LIB_90S_NAME3} PUBLIC ${LIB_RNG})
+
+  set(LIB_90S_NAME5 ${PROJECT_NAME}5-90s)
+  add_library(${LIB_90S_NAME5} SHARED ${SRCS_90S})
+  target_compile_definitions(${LIB_90S_NAME5} PUBLIC SMAUG_MODE=5 SYMMETRIC_90S)
+  target_compile_options(${LIB_90S_NAME5} PRIVATE ${C_FLAGS})
+  target_link_libraries(${LIB_90S_NAME5} PUBLIC ${LIB_RNG})
+endif()
 
 add_subdirectory(test)
 add_subdirectory(kat)

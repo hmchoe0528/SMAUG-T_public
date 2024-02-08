@@ -34,3 +34,18 @@ target_compile_definitions(${KAT_KEM_LIB_NAME5} PUBLIC SMAUG_MODE=5)
 
 add_executable(${KAT_KEM_LIB_NAME5}-main PQCgenKAT_kem.c)
 target_link_libraries(${KAT_KEM_LIB_NAME5}-main ${KAT_KEM_LIB_NAME5} ${LIB_NAME5} OpenSSL::Crypto)
+
+
+if(ENABLE_SYMMETRIC_90S)
+    # Rank-2 KEM
+    add_executable(${KAT_KEM_LIB_NAME1}-main-90s PQCgenKAT_kem.c)
+    target_link_libraries(${KAT_KEM_LIB_NAME1}-main-90s ${KAT_KEM_LIB_NAME1} ${LIB_90S_NAME1} OpenSSL::Crypto)
+
+    # Rank-3 KEM
+    add_executable(${KAT_KEM_LIB_NAME3}-main-90s PQCgenKAT_kem.c)
+    target_link_libraries(${KAT_KEM_LIB_NAME3}-main-90s ${KAT_KEM_LIB_NAME3} ${LIB_90S_NAME3} OpenSSL::Crypto)
+
+    # Rank-5 KEM
+    add_executable(${KAT_KEM_LIB_NAME5}-main-90s PQCgenKAT_kem.c)
+    target_link_libraries(${KAT_KEM_LIB_NAME5}-main-90s ${KAT_KEM_LIB_NAME5} ${LIB_90S_NAME5} OpenSSL::Crypto)
+endif()

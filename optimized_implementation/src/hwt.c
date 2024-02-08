@@ -18,10 +18,10 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
          const size_t input_size, const uint16_t hmwt) {
 
     uint32_t i = 0, pos = 0;
-    uint32_t buf[SHAKE256_RATE * 2] = {0};
+    uint32_t buf[XOF_BLOCKBYTES * 2] = {0};
 
     uint8_t xof_block = (hmwt == HS) ? HS_XOF : HR_XOF;
-    shake256((uint8_t *)buf, xof_block * SHAKE256_RATE, input, input_size);
+    prf((uint8_t *)buf, xof_block * XOF_BLOCKBYTES, input, input_size);
 
     for (i = DIMENSION - hmwt; i < DIMENSION; ++i) {
         uint64_t deg_tmp = 0;
