@@ -1,1 +1,0 @@
-../../reference_implementation/kat/kat_kem.c

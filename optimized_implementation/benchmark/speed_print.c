@@ -1,1 +1,0 @@
-../../reference_implementation/benchmark/speed_print.c
