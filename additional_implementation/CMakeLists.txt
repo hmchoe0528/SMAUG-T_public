@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(smaug LANGUAGES C CXX) # CXX for google test
+project(TiMER LANGUAGES C CXX) # CXX for google test
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/)
@@ -96,7 +96,7 @@ if(ENABLE_CPPCHECK)
 endif()
 
 
-set(LIB_NAME1 ${PROJECT_NAME}1)
+set(LIB_NAME1 ${PROJECT_NAME})
 add_library(${LIB_NAME1} SHARED ${srcs})
 target_compile_definitions(${LIB_NAME1} PUBLIC TIMER_MODE=1)
 target_compile_options(${LIB_NAME1} PRIVATE ${C_FLAGS})
