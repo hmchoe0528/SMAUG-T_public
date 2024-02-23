@@ -65,10 +65,9 @@ def runSmaugError(ver, n, k, q, p, T, hs, hr, prob_read, tag):
     sum_dist = sum_dist+sum_dist  # EDIT_TiMER
 
     # Calculate probability
-	bound = int(q/2)   # EDIT_TiMER
+    bound = int(q/2)   # EDIT_TiMER
     sum_over_bound = mpz(sum((sum_dist.prob[:sum_dist.zero - bound+1])) + sum((sum_dist.prob[sum_dist.zero + bound+2:])))
     answer = mpq(sum_over_bound, sum_dist.summation)
 
     return log(float(answer), 2) + log(n*k, 2)
-
 
