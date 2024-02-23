@@ -1,69 +1,65 @@
 #include "poly.h"
 
+static uint16_t flipabs(uint16_t x);
+
 /*************************************************
-* Name:        poly_frommsg
-* 
-* Description: Convert 16-byte message to polynomial
-*
-* Arguments:   - poly *r:                  pointer to output polynomial
-*              - const unsigned char *msg: pointer to input message
-**************************************************/
-void poly_frommsg(poly *r, const uint8_t *msg)
-{
-  unsigned int mask;
-  unsigned Mod = Modulus_Q>>1;
-  for(size_t i=0; i<MSG_BYTES; i++) 
-  {
-    for(size_t j=0; j<8; j++)
-    {
-		mask = (msg[i] >> j) & 1;
-	    mask = (mask * Mod) & Mod;
-		r->coeffs[8*i+j+  0] = mask;
-		r->coeffs[8*i+j+128] = mask;
+ * Name:        poly_frommsg
+ *
+ * Description: Convert 16-byte message to polynomial
+ *
+ * Arguments:   - poly *r:                  pointer to output polynomial
+ *              - const unsigned char *msg: pointer to input message
+ **************************************************/
+void poly_frommsg(poly *r, const uint8_t *msg) {
+    unsigned int mask;
+    unsigned Mod = Modulus_Q >> 1;
+    for (size_t i = 0; i < MSG_BYTES; i++) {
+        for (size_t j = 0; j < 8; j++) {
+            mask = (msg[i] >> j) & 1;
+            mask = (mask * Mod) & Mod;
+            r->coeffs[8 * i + j + 0] = mask;
+            r->coeffs[8 * i + j + 128] = mask;
+        }
     }
-  }
 }
 
 /*************************************************
-* Name:        poly_tomsg
-* 
-* Description: Convert polynomial to 16-byte message
-*
-* Arguments:   - unsigned char *msg: pointer to output message
-*              - const poly *x:      pointer to input polynomial
-**************************************************/
-void poly_tomsg(unsigned char *msg, const poly *x)
-{
-  uint16_t t;
-  unsigned Mod = Modulus_Q>>1;
-  for(size_t i=0; i<MSG_BYTES; i++)
-    msg[i] = 0;
+ * Name:        poly_tomsg
+ *
+ * Description: Convert polynomial to 16-byte message
+ *
+ * Arguments:   - unsigned char *msg: pointer to output message
+ *              - const poly *x:      pointer to input polynomial
+ **************************************************/
+void poly_tomsg(unsigned char *msg, const poly *x) {
+    uint16_t t;
+    unsigned Mod = Modulus_Q >> 1;
+    for (size_t i = 0; i < MSG_BYTES; i++)
+        msg[i] = 0;
 
-  for(size_t i=0; i<LWE_N/2; i++)
-  {
-    t  = flipabs(x->coeffs[i+  0]);
-    t += flipabs(x->coeffs[i+128]);
-    t = t - Mod;
-    t >>= 15;
-    msg[i>>3] |= t<<(i&7);
-  }
+    for (size_t i = 0; i < LWE_N / 2; i++) {
+        t = flipabs(x->coeffs[i + 0]);
+        t += flipabs(x->coeffs[i + 128]);
+        t = t - Mod;
+        t >>= 15;
+        msg[i >> 3] |= t << (i & 7);
+    }
 }
 
 /*************************************************
-* Name:        flipabs
-* 
-* Description: Computes |(x mod q) - Q/2|
-*
-* Arguments:   uint16_t x: input coefficient
-*              
-* Returns |(x mod q) - Q/2|
-**************************************************/
-static uint16_t flipabs(uint16_t x)
-{
-  int16_t r,m;
-  r = x - (Modulus_Q>>1);
-  m = r >> 15;
-  return (r + m) ^ m;
+ * Name:        flipabs
+ *
+ * Description: Computes |(x mod q) - Q/2|
+ *
+ * Arguments:   uint16_t x: input coefficient
+ *
+ * Returns |(x mod q) - Q/2|
+ **************************************************/
+static uint16_t flipabs(uint16_t x) {
+    int16_t r, m;
+    r = x - (Modulus_Q >> 1);
+    m = r >> 15;
+    return (r + m) ^ m;
 }
 
 /*************************************************

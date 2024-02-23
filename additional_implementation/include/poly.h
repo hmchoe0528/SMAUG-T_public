@@ -20,8 +20,6 @@ typedef struct {
     uint8_t cnt;
 } sppoly; // sparse poly
 
-static uint16_t coeff_freeze(uint16_t x);
-static uint16_t flipabs(uint16_t x);
 void poly_frommsg(poly *r, const uint8_t *msg);
 void poly_tomsg(unsigned char *msg, const poly *x);
 
