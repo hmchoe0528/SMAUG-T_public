@@ -25,28 +25,29 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
     shake256_init(&state);
     shake256_absorb_once(&state, input, input_size);
     shake256_squeezeblocks((uint8_t *)buf, xof_block, &state);
+
     uint32_t div;
     uint32_t garbage;
-    for(int i=0;i<xof_block*32;i++){
+    for (int i = 0; i < xof_block * 32; i++) {
         uint32_t deg = buf[i];
         uint32_t remain;
-        remain=0xfffffffff / (DIMENSION-hmwt+pos);
-        div=0xffffffff - remain * (DIMENSION-hmwt+pos);
+        remain = 0xfffffffff / (DIMENSION - hmwt + pos);
+        div = 0xffffffff - remain * (DIMENSION - hmwt + pos);
         div++;
-        if(((0xffffffff-div)>deg)&& (pos<hmwt)){
-            res[DIMENSION - hmwt+pos] = res[div];
-            res[div] = ((buf[(xof_block*32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
+        if (((0xffffffff - div) > deg) && (pos < hmwt)) {
+            res[DIMENSION - hmwt + pos] = res[div];
+            res[div] =
+                ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
             pos++;
-        }
-        else{
+        } else {
             garbage = res[div];
-            garbage = ((buf[(xof_block*32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
+            garbage =
+                ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
         }
     }
 
-    if(pos!=hmwt){
-        fprintf(stderr,"Sampling Error");
-    }
+    if (pos != hmwt)
+        fprintf(stderr, "hwt sampling error\n");
 
     size_t cnt_arr_idx = 0;
     for (i = 0; i < DIMENSION; ++i) {

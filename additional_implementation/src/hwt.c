@@ -26,15 +26,28 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
     shake256_absorb_once(&state, input, input_size);
     shake256_squeezeblocks((uint8_t *)buf, xof_block, &state);
 
-    for (i = DIMENSION - hmwt; i < DIMENSION; ++i) {
-        uint64_t deg_tmp = 0;
-        deg_tmp = (uint64_t)buf[pos] * (i + 1);
-        uint32_t deg = (uint32_t)(deg_tmp >> 32);
-
-        res[i] = res[deg];
-        res[deg] = ((buf[(hmwt + (pos >> 4))] >> (pos & 0x0f)) & 0x02) - 1;
-        pos++;
+    uint32_t div;
+    uint32_t garbage;
+    for (int i = 0; i < xof_block * 32; i++) {
+        uint32_t deg = buf[i];
+        uint32_t remain;
+        remain = 0xfffffffff / (DIMENSION - hmwt + pos);
+        div = 0xffffffff - remain * (DIMENSION - hmwt + pos);
+        div++;
+        if (((0xffffffff - div) > deg) && (pos < hmwt)) {
+            res[DIMENSION - hmwt + pos] = res[div];
+            res[div] =
+                ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
+            pos++;
+        } else {
+            garbage = res[div];
+            garbage =
+                ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
+        }
     }
+
+    if (pos != hmwt)
+        fprintf(stderr, "hwt sampling error\n");
 
     size_t cnt_arr_idx = 0;
     for (i = 0; i < DIMENSION; ++i) {
