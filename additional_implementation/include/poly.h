@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <immintrin.h> // AVX2 intrinsics
 
 typedef struct {
     uint16_t coeffs[LWE_N];
@@ -20,6 +21,7 @@ typedef struct {
     uint8_t cnt;
 } sppoly; // sparse poly
 
+uint16_t flipabs(uint16_t x);  /* IF YOU WANT TO AVX2, PLEASE DELETE(OR COMMENT) "filbabs" header */
 void poly_frommsg(poly *r, const uint8_t *msg);
 void poly_tomsg(unsigned char *msg, const poly *x);
 
