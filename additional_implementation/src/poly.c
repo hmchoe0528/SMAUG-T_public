@@ -1,7 +1,5 @@
 #include "poly.h"
-
-static uint16_t flipabs(uint16_t x);
-
+#include <string.h>
 /*************************************************
  * Name:        poly_frommsg
  *
@@ -12,16 +10,42 @@ static uint16_t flipabs(uint16_t x);
  **************************************************/
 void poly_frommsg(poly *r, const uint8_t *msg) {
     unsigned int mask;
-    unsigned Mod = Modulus_Q >> 1;
     for (size_t i = 0; i < MSG_BYTES; i++) {
         for (size_t j = 0; j < 8; j++) {
+	        size_t index = 8 * i + j;
             mask = (msg[i] >> j) & 1;
-            mask = (mask * Mod) & Mod;
-            r->coeffs[8 * i + j + 0] = mask;
-            r->coeffs[8 * i + j + 128] = mask;
+            mask = (mask * Modulus_Q) & Modulus_Q; //Modulus_Q is define Q/2
+            r->coeffs[index] = mask;
+            r->coeffs[index + 128] = mask;
         }
     }
 }
+/*************AVX2 Optimized Code***************/
+/*
+void poly_frommsg(poly *r, const uint8_t *msg) {
+    __m256i mask = _mm256_set1_epi16(Modulus_Q); // Set mask to Modulus_Q
+    __m256i zero = _mm256_setzero_si256(); // Zero vector for comparison
+    
+    for (size_t i = 0; i < MSG_BYTES; i++) {
+        uint8_t byte = msg[i]; // Process one byte at a time
+        
+        for (size_t j = 0; j < 8; j++) {
+            // Create a vector with all bits of the byte replicated across
+            __m256i bits = _mm256_set1_epi16((byte >> j) & 1);
+            // Compare bits to zero, resulting in either 0xFFFF or 0x0000 for each element
+            __m256i compare = _mm256_cmpgt_epi16(bits, zero);
+            // Bitwise AND with mask to get either 0 or Modulus_Q
+            __m256i result = _mm256_and_si256(compare, mask);
+            
+            // Store the result into the polynomial coefficients
+            r->coeffs[8 * i + j] = _mm256_extract_epi16(result, 0); // Extracting one element for demonstration
+            r->coeffs[8 * i + j + 128] = _mm256_extract_epi16(result, 0);
+        }
+    }
+}
+*/
+/********************END***********************/
+
 
 /*************************************************
  * Name:        poly_tomsg
@@ -33,18 +57,52 @@ void poly_frommsg(poly *r, const uint8_t *msg) {
  **************************************************/
 void poly_tomsg(unsigned char *msg, const poly *x) {
     uint16_t t;
-    unsigned Mod = Modulus_Q >> 1;
     for (size_t i = 0; i < MSG_BYTES; i++)
         msg[i] = 0;
 
     for (size_t i = 0; i < LWE_N / 2; i++) {
-        t = flipabs(x->coeffs[i + 0]);
+        t = flipabs(x->coeffs[i]);
         t += flipabs(x->coeffs[i + 128]);
-        t = t - Mod;
+        t = t - Modulus_Q;
         t >>= 15;
         msg[i >> 3] |= t << (i & 7);
     }
 }
+
+/*************AVX2 Optimized Code***************/
+
+/*void poly_tomsg(unsigned char *msg, const poly *x) {
+    memset(msg, 0, MSG_BYTES);
+
+    // Process in chunks of 16, since AVX2 can handle 16 uint16_t values at once
+    for (size_t i = 0; i < LWE_N / 2; i += 16) {
+        // Load 16 coefficients from each half
+        __m256i coeff1 = _mm256_loadu_si256((__m256i *)&x->coeffs[i]);
+        __m256i coeff2 = _mm256_loadu_si256((__m256i *)&x->coeffs[i + 128]);
+
+        // Vectorized flipabs operation for both halves
+        __m256i half_modulus = _mm256_set1_epi16(Modulus_Q);
+        __m256i diff1 = _mm256_sub_epi16(coeff1, half_modulus);
+        __m256i diff2 = _mm256_sub_epi16(coeff2, half_modulus);
+        __m256i neg1 = _mm256_srai_epi16(diff1, 15);
+        __m256i neg2 = _mm256_srai_epi16(diff2, 15);
+        __m256i abs1 = _mm256_xor_si256(_mm256_add_epi16(diff1, neg1), neg1);
+        __m256i abs2 = _mm256_xor_si256(_mm256_add_epi16(diff2, neg2), neg2);
+
+        // Add abs1 and abs2, subtract Modulus_Q, and shift right to get the bit
+        __m256i sum = _mm256_add_epi16(abs1, abs2);
+        sum = _mm256_sub_epi16(sum, half_modulus);
+        __m256i bit = _mm256_srli_epi16(sum, 15);
+
+        // Scalar processing to set bits in the message
+        // This part does not leverage AVX2 due to the granularity of operations
+        for (size_t j = 0; j < 16; ++j) {
+            int bit_val = (_mm256_extract_epi16(bit, j) & 1) << ((i + j) & 7);
+            msg[(i + j) >> 3] |= bit_val;
+        }
+    }
+}*/
+/********************END***********************/
 
 /*************************************************
  * Name:        flipabs
@@ -55,12 +113,18 @@ void poly_tomsg(unsigned char *msg, const poly *x) {
  *
  * Returns |(x mod q) - Q/2|
  **************************************************/
-static uint16_t flipabs(uint16_t x) {
+uint16_t flipabs(uint16_t x) {
     int16_t r, m;
-    r = x - (Modulus_Q >> 1);
+    r = x - (Modulus_Q);  //Modulus_Q is already define Q/2
     m = r >> 15;
     return (r + m) ^ m;
 }
+
+/*************AVX2 Optimized Code***************
+   IF YOU WANT TO AVX2, PLEASE DELETE(OR COMMENT) "filbabs" function
+   ALSO, CHECK THE poly.h (delete the filpabs header)  */
+/********************END***********************/
+
 
 /*************************************************
  * Name:        poly_add
