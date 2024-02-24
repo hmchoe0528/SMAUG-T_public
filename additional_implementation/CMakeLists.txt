@@ -38,7 +38,7 @@ set(srcs
 if(MSVC)
   set(C_FLAGS /nologo /O2 /W4 /wd4146 /wd4244)
 else()
-  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra)
+  set(C_FLAGS -O3 -fomit-frame-pointer -fPIC -Wall -Wextra) # -mavx2
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -47,11 +47,11 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(LIB_RNG RNG)
 add_library(${LIB_RNG} ${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/randombytes.c)
-target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC)
+target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC) # -mavx2
 
 set(LIB_FIPS202 FIPS202)
 add_library(${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/fips202.c)
-target_compile_options(${LIB_FIPS202} PRIVATE -O3 -fomit-frame-pointer -fPIC)
+target_compile_options(${LIB_FIPS202} PRIVATE -O3 -fomit-frame-pointer -fPIC) # -mavx2
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy during build" OFF)
 if(ENABLE_CLANG_TIDY)
