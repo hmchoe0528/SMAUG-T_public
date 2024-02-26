@@ -29,74 +29,74 @@ all: \
 	speed \
 
 shared: \
-	smaug1.so \
-	smaug3.so \
-	smaug5.so \
+	smaug-t1.so \
+	smaug-t3.so \
+	smaug-t5.so \
 
 main: \
-	smaug1-main \
-	smaug3-main \
-	smaug5-main \
+	smaug-t1-main \
+	smaug-t3-main \
+	smaug-t5-main \
 
 speed: \
-	smaug1-speed \
-	smaug3-speed \
-	smaug5-speed \
+	smaug-t1-speed \
+	smaug-t3-speed \
+	smaug-t5-speed \
 
 kat: \
-	PQCgenKAT_smaug1 \
-	PQCgenKAT_smaug3 \
-	PQCgenKAT_smaug5 \
+	PQCgenKAT_smaug-t1 \
+	PQCgenKAT_smaug-t3 \
+	PQCgenKAT_smaug-t5 \
 
 
-smaug1.so: $(SOURCESKECCAK) $(HEADERSKECCAK)
-	$(CC) -shared -fPIC $(CFLAGS) -DSMAUG_MODE=1 $(SOURCESKECCAK) $(INCLUDE) -o smaug1.so
+smaug-t1.so: $(SOURCESKECCAK) $(HEADERSKECCAK)
+	$(CC) -shared -fPIC $(CFLAGS) -DSMAUG_MODE=1 $(SOURCESKECCAK) $(INCLUDE) -o smaug-t1.so
 
-smaug3.so: $(SOURCESKECCAK) $(HEADERSKECCAK)
-	$(CC) -shared -fPIC $(CFLAGS) -DSMAUG_MODE=3 $(SOURCESKECCAK) $(INCLUDE) -o smaug3.so
+smaug-t3.so: $(SOURCESKECCAK) $(HEADERSKECCAK)
+	$(CC) -shared -fPIC $(CFLAGS) -DSMAUG_MODE=3 $(SOURCESKECCAK) $(INCLUDE) -o smaug-t3.so
 
-smaug5.so: $(SOURCESKECCAK) $(HEADERSKECCAK)
-	$(CC) -shared -fPIC $(CFLAGS) -DSMAUG_MODE=5 $(SOURCESKECCAK) $(INCLUDE) -o smaug5.so
-
-
-smaug1-main: $(SOURCES_MAIN)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=1 $(SOURCES_MAIN) $(INCLUDE) -o smaug1-main
-
-smaug3-main: $(SOURCES_MAIN)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=3 $(SOURCES_MAIN) $(INCLUDE) -o smaug3-main
-
-smaug5-main: $(SOURCES_MAIN)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=5 $(SOURCES_MAIN) $(INCLUDE) -o smaug5-main
+smaug-t5.so: $(SOURCESKECCAK) $(HEADERSKECCAK)
+	$(CC) -shared -fPIC $(CFLAGS) -DSMAUG_MODE=5 $(SOURCESKECCAK) $(INCLUDE) -o smaug-t5.so
 
 
-smaug1-speed: $(SOURCES_SPEED)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=1 $(SOURCES_SPEED) $(INCLUDE) -o smaug1-speed
+smaug-t1-main: $(SOURCES_MAIN)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=1 $(SOURCES_MAIN) $(INCLUDE) -o smaug-t1-main
 
-smaug3-speed: $(SOURCES_SPEED)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=3 $(SOURCES_SPEED) $(INCLUDE) -o smaug3-speed
+smaug-t3-main: $(SOURCES_MAIN)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=3 $(SOURCES_MAIN) $(INCLUDE) -o smaug-t3-main
 
-smaug5-speed: $(SOURCES_SPEED)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=5 $(SOURCES_SPEED) $(INCLUDE) -o smaug5-speed
+smaug-t5-main: $(SOURCES_MAIN)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=5 $(SOURCES_MAIN) $(INCLUDE) -o smaug-t5-main
 
 
-PQCgenKAT_smaug1: $(SOURCES_KAT)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=1 -DCRYPTO_ALGNAME=\"SMAUG1_KEM\" $(SOURCES_KAT) $(INCLUDE) -o PQCgenKAT_smaug1 -lcrypto
+smaug-t1-speed: $(SOURCES_SPEED)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=1 $(SOURCES_SPEED) $(INCLUDE) -o smaug-t1-speed
 
-PQCgenKAT_smaug3: $(SOURCES_KAT)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=3 -DCRYPTO_ALGNAME=\"SMAUG3_KEM\" $(SOURCES_KAT) $(INCLUDE) -o PQCgenKAT_smaug3 -lcrypto
+smaug-t3-speed: $(SOURCES_SPEED)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=3 $(SOURCES_SPEED) $(INCLUDE) -o smaug-t3-speed
 
-PQCgenKAT_smaug5: $(SOURCES_KAT)
-	$(CC) $(CFLAGS) -DSMAUG_MODE=5 -DCRYPTO_ALGNAME=\"SMAUG5_KEM\" $(SOURCES_KAT) $(INCLUDE) -o PQCgenKAT_smaug5 -lcrypto
+smaug-t5-speed: $(SOURCES_SPEED)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=5 $(SOURCES_SPEED) $(INCLUDE) -o smaug-t5-speed
+
+
+PQCgenKAT_smaug-t1: $(SOURCES_KAT)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=1 -DCRYPTO_ALGNAME=\"SMAUG-T1_KEM\" $(SOURCES_KAT) $(INCLUDE) -o PQCgenKAT_smaug-t1 -lcrypto
+
+PQCgenKAT_smaug-t3: $(SOURCES_KAT)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=3 -DCRYPTO_ALGNAME=\"SMAUG-T3_KEM\" $(SOURCES_KAT) $(INCLUDE) -o PQCgenKAT_smaug-t3 -lcrypto
+
+PQCgenKAT_smaug-t5: $(SOURCES_KAT)
+	$(CC) $(CFLAGS) -DSMAUG_MODE=5 -DCRYPTO_ALGNAME=\"SMAUG-T5_KEM\" $(SOURCES_KAT) $(INCLUDE) -o PQCgenKAT_smaug-t5 -lcrypto
 
 
 
 clean:
-	-$(RM) -rf smaug1-main
-	-$(RM) -rf smaug3-main
-	-$(RM) -rf smaug5-main
-	-$(RM) -rf smaug1-speed
-	-$(RM) -rf smaug3-speed
-	-$(RM) -rf smaug5-speed
-	-$(RM) -rf PQCgenKAT_smaug1
-	-$(RM) -rf PQCgenKAT_smaug3
-	-$(RM) -rf PQCgenKAT_smaug5
+	-$(RM) -rf smaug-t1-main
+	-$(RM) -rf smaug-t3-main
+	-$(RM) -rf smaug-t5-main
+	-$(RM) -rf smaug-t1-speed
+	-$(RM) -rf smaug-t3-speed
+	-$(RM) -rf smaug-t5-speed
+	-$(RM) -rf PQCgenKAT_smaug-t1
+	-$(RM) -rf PQCgenKAT_smaug-t3
+	-$(RM) -rf PQCgenKAT_smaug-t5

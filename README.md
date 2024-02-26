@@ -1,21 +1,27 @@
-# SMAUG_private
-SMAUG reference code (private repository for preparing public release). 
-Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug).
+# SMAUG-T_public
+SMAUG-T reference code (public release). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-T).
 
 
 # Build
 
-To build SMAUG library and executables, there are the following prerequisites:
+To build SMAUG-T library and executables, there are the following prerequisites for KAT:
 
-- [CMake](https://cmake.org/)
 - [OpenSSL](https://www.openssl.org/)
-- [googleTest](https://google.github.io/googletest/)
 
-Using CMake, you can build libraries and executables in the `reference_inplementation` directory.
+Using Makefile, you can build libraries and executables for each implemenations
+The implementations included in each directory are as follows:
+
+1. reference_inplementation (pure C): `SMAUG-T128`, `SMAUG-T192`, `SMAUG-T256` 
+2. additional_inplementation (pure C): `TiMER`
+3. optimized_inplementation (AVX2): `SMAUG-T128`, `SMAUG-T192`, `SMAUG-T256` 
+
+
+\
+Build in each implementation directory.
 
 ```bash
-$ cmake -S . -B build
-$ cmake --build build
+$ make 
+$ make kat # It requires OpenSSL
 ```
 
 # Run
@@ -24,17 +30,11 @@ If the build was successful, result files will be generated in the `build` direc
 
 ```bash
 # In the build/bin directory
-$ ./smaug1-main
-$ ./smaug1-benchmark
-$ ./smaug1-kat-kem-main
+$ ./smaug-t1-main
+$ ./smaug-t1-speed
+$ ./PQCgenKAT_smaug-t1
 ```
 
-If you want to run quick tests for each unit of the SMAUG, call
-
-```bash
-# In the build directory
-$ ctest
-```
 
 # Citing
 
@@ -48,4 +48,4 @@ The codes and the specifications are under the MIT license.
 
 # Acknowledgements
 
-SMAUG is submitted to the Korean Post-Quantum Cryptography competition. 
+SMAUG-T is submitted to the Korean Post-Quantum Cryptography competition. 
