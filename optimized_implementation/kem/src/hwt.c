@@ -25,7 +25,7 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
 
     uint32_t div;
     uint32_t garbage;
-    for (int i = 0; i < xof_block * 32; i++) {
+    for (i = 0; i < xof_block * 32; i++) {
         uint32_t deg = buf[i];
         uint32_t remain;
         remain = 0xfffffffff / (DIMENSION - hmwt + pos);

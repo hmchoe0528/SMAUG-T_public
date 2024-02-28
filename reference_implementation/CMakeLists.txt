@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(smaug LANGUAGES C CXX) # CXX for google test
+project(smaug-t LANGUAGES C CXX) # CXX for google test
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/)

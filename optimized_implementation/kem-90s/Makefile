@@ -36,66 +36,66 @@ all: \
 	speed \
 
 shared: \
-	smaug1-90s.so \
-	smaug3-90s.so \
-	smaug5-90s.so \
+	smaug-t1-90s.so \
+	smaug-t3-90s.so \
+	smaug-t5-90s.so \
 
 main: \
-	smaug1-main-90s \
-	smaug3-main-90s \
-	smaug5-main-90s \
+	smaug-t1-main-90s \
+	smaug-t3-main-90s \
+	smaug-t5-main-90s \
 
 speed: \
-	smaug1-speed-90s \
-	smaug3-speed-90s \
-	smaug5-speed-90s \
+	smaug-t1-speed-90s \
+	smaug-t3-speed-90s \
+	smaug-t5-speed-90s \
 
 kat: \
-	PQCgenKAT_smaug1-90s \
-	PQCgenKAT_smaug3-90s \
-	PQCgenKAT_smaug5-90s \
+	PQCgenKAT_smaug-t1-90s \
+	PQCgenKAT_smaug-t3-90s \
+	PQCgenKAT_smaug-t5-90s \
 
 
-smaug1-90s.so: $(SOURCES90S) $(HEADERS90S)
-	$(CC) -shared -fPIC $(CFLAGS90S) -DSMAUG_MODE=1 $(SOURCES90S) $(INCLUDE) -o smaug1-90s.so -lcrypto
-smaug3-90s.so: $(SOURCES90S) $(HEADERS90S)
-	$(CC) -shared -fPIC $(CFLAGS90S) -DSMAUG_MODE=3 $(SOURCES90S) $(INCLUDE) -o smaug3-90s.so -lcrypto
-smaug5-90s.so: $(SOURCES90S) $(HEADERS90S)
-	$(CC) -shared -fPIC $(CFLAGS90S) -DSMAUG_MODE=5 $(SOURCES90S) $(INCLUDE) -o smaug5-90s.so -lcrypto
+smaug-t1-90s.so: $(SOURCES90S) $(HEADERS90S)
+	$(CC) -shared -fPIC $(CFLAGS90S) -DSMAUG_MODE=1 $(SOURCES90S) $(INCLUDE) -o smaug-t1-90s.so -lcrypto
+smaug-t3-90s.so: $(SOURCES90S) $(HEADERS90S)
+	$(CC) -shared -fPIC $(CFLAGS90S) -DSMAUG_MODE=3 $(SOURCES90S) $(INCLUDE) -o smaug-t3-90s.so -lcrypto
+smaug-t5-90s.so: $(SOURCES90S) $(HEADERS90S)
+	$(CC) -shared -fPIC $(CFLAGS90S) -DSMAUG_MODE=5 $(SOURCES90S) $(INCLUDE) -o smaug-t5-90s.so -lcrypto
 
 
-smaug1-main-90s: $(SOURCES90S_MAIN)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=1 $(SOURCES90S_MAIN) $(INCLUDE) -o smaug1-main-90s -lcrypto
-smaug3-main-90s: $(SOURCES90S_MAIN)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=3 $(SOURCES90S_MAIN) $(INCLUDE) -o smaug3-main-90s -lcrypto
-smaug5-main-90s: $(SOURCES90S_MAIN)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=5 $(SOURCES90S_MAIN) $(INCLUDE) -o smaug5-main-90s -lcrypto
+smaug-t1-main-90s: $(SOURCES90S_MAIN)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=1 $(SOURCES90S_MAIN) $(INCLUDE) -o smaug-t1-main-90s -lcrypto
+smaug-t3-main-90s: $(SOURCES90S_MAIN)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=3 $(SOURCES90S_MAIN) $(INCLUDE) -o smaug-t3-main-90s -lcrypto
+smaug-t5-main-90s: $(SOURCES90S_MAIN)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=5 $(SOURCES90S_MAIN) $(INCLUDE) -o smaug-t5-main-90s -lcrypto
 
 
-smaug1-speed-90s: $(SOURCES90S_SPEED)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=1 $(SOURCES90S_SPEED) $(INCLUDE) -o smaug1-speed-90s -lcrypto
-smaug3-speed-90s: $(SOURCES90S_SPEED)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=3 $(SOURCES90S_SPEED) $(INCLUDE) -o smaug3-speed-90s -lcrypto
-smaug5-speed-90s: $(SOURCES90S_SPEED)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=5 $(SOURCES90S_SPEED) $(INCLUDE) -o smaug5-speed-90s -lcrypto
+smaug-t1-speed-90s: $(SOURCES90S_SPEED)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=1 $(SOURCES90S_SPEED) $(INCLUDE) -o smaug-t1-speed-90s -lcrypto
+smaug-t3-speed-90s: $(SOURCES90S_SPEED)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=3 $(SOURCES90S_SPEED) $(INCLUDE) -o smaug-t3-speed-90s -lcrypto
+smaug-t5-speed-90s: $(SOURCES90S_SPEED)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=5 $(SOURCES90S_SPEED) $(INCLUDE) -o smaug-t5-speed-90s -lcrypto
 
 
-PQCgenKAT_smaug1-90s: $(SOURCES90S_KAT)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=1 -DCRYPTO_ALGNAME=\"SMAUG1_KEM\" $(SOURCES90S_KAT) $(INCLUDE) -o PQCgenKAT_smaug1-90s -lcrypto
-PQCgenKAT_smaug3-90s: $(SOURCES90S_KAT)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=3 -DCRYPTO_ALGNAME=\"SMAUG3_KEM\" $(SOURCES90S_KAT) $(INCLUDE) -o PQCgenKAT_smaug3-90s -lcrypto
-PQCgenKAT_smaug5-90s: $(SOURCES90S_KAT)
-	$(CC) $(CFLAGS90S) -DSMAUG_MODE=5 -DCRYPTO_ALGNAME=\"SMAUG5_KEM\" $(SOURCES90S_KAT) $(INCLUDE) -o PQCgenKAT_smaug5-90s -lcrypto
+PQCgenKAT_smaug-t1-90s: $(SOURCES90S_KAT)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=1 -DCRYPTO_ALGNAME=\"SMAUG-T1_KEM\" $(SOURCES90S_KAT) $(INCLUDE) -o PQCgenKAT_smaug-t1-90s -lcrypto
+PQCgenKAT_smaug-t3-90s: $(SOURCES90S_KAT)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=3 -DCRYPTO_ALGNAME=\"SMAUG-T3_KEM\" $(SOURCES90S_KAT) $(INCLUDE) -o PQCgenKAT_smaug-t3-90s -lcrypto
+PQCgenKAT_smaug-t5-90s: $(SOURCES90S_KAT)
+	$(CC) $(CFLAGS90S) -DSMAUG_MODE=5 -DCRYPTO_ALGNAME=\"SMAUG-T5_KEM\" $(SOURCES90S_KAT) $(INCLUDE) -o PQCgenKAT_smaug-t5-90s -lcrypto
 
 
 
 clean:
-	-$(RM) -rf smaug1-main-90s
-	-$(RM) -rf smaug3-main-90s
-	-$(RM) -rf smaug5-main-90s
-	-$(RM) -rf smaug1-speed-90s
-	-$(RM) -rf smaug3-speed-90s
-	-$(RM) -rf smaug5-speed-90s
-	-$(RM) -rf PQCgenKAT_smaug1-90s
-	-$(RM) -rf PQCgenKAT_smaug3-90s
-	-$(RM) -rf PQCgenKAT_smaug5-90s
+	-$(RM) -rf smaug-t1-main-90s
+	-$(RM) -rf smaug-t3-main-90s
+	-$(RM) -rf smaug-t5-main-90s
+	-$(RM) -rf smaug-t1-speed-90s
+	-$(RM) -rf smaug-t3-speed-90s
+	-$(RM) -rf smaug-t5-speed-90s
+	-$(RM) -rf PQCgenKAT_smaug-t1-90s
+	-$(RM) -rf PQCgenKAT_smaug-t3-90s
+	-$(RM) -rf PQCgenKAT_smaug-t5-90s

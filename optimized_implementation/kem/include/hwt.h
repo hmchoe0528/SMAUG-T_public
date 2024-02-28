@@ -14,11 +14,11 @@
 
 #elif SMAUG_MODE == 3
 #define HS_XOF 7
-#define HR_XOF 5
+#define HR_XOF 7
 
 #elif SMAUG_MODE == 5
-#define HS_XOF 6
-#define HR_XOF 5
+#define HS_XOF 7
+#define HR_XOF 7
 #endif
 
 #define hwt SMAUG_NAMESPACE(hwt)
