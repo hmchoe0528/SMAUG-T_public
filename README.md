@@ -26,10 +26,9 @@ $ make kat # It requires OpenSSL
 
 # Run
 
-If the build was successful, result files will be generated in the `build` directory. To run each test, execute as follows
+If the build was successful, result files will be generated in each directory. To run each test, execute as follows
 
 ```bash
-# In the build/bin directory
 $ ./smaug-t1-main
 $ ./smaug-t1-speed
 $ ./PQCgenKAT_smaug-t1
