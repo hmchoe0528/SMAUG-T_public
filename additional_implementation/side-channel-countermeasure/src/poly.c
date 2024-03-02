@@ -84,7 +84,7 @@ void poly_mult_add(poly *res, const poly *op1, const sppoly *op2) {
     for (size_t j = op2->neg_start; j < op2->cnt; ++j) {
         poly_sub(temp, op1, (op2->sx)[j]);
     }
-	poly_reduce_keyGen(res, temp);
+    poly_reduce(res, temp);
 }
 
 /*************************************************
@@ -111,7 +111,7 @@ void poly_mult_sub(poly *res, const poly *op1, const sppoly *op2) {
     for (size_t j = op2->neg_start; j < op2->cnt; ++j) {
         poly_add(temp, op1, (op2->sx)[j]);
     }
-    poly_reduce(res, temp);
+    poly_reduce_keyGen(res, temp);	
 }
 
 /*************************************************
