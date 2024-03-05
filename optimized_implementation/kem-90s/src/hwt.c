@@ -18,15 +18,15 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
          const size_t input_size, const uint16_t hmwt) {
 
     uint32_t pos = 0, div = 0, remain = 0;
-    uint32_t buf[SHAKE256_RATE * 2] = {0};
+    uint32_t buf[XOF_BLOCKBYTES * 2] = {0};
 
     uint8_t xof_block = (hmwt == HS) ? HS_XOF : HR_XOF;
     prf((uint8_t *)buf, xof_block * XOF_BLOCKBYTES, input, input_size);
 
     for (int i = 0; i < xof_block * 32; i++) {
         uint32_t deg = buf[i];
-        remain = 0xffffffff / (DIMENSION - hmwt + pos);
-        div = 0xffffffff - remain * (DIMENSION - hmwt + pos);
+        remain = 0xffffffff / (DIMENSION - hmwt + pos + 1);
+        div = 0xffffffff - remain * (DIMENSION - hmwt + pos + 1);
         div++;
         deg = deg / remain;
         if (((0xffffffff - div) > deg) && pos < hmwt) {

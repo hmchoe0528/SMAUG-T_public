@@ -28,8 +28,8 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
 
     for (int i = 0; i < xof_block * 32; i++) {
         uint32_t deg = buf[i];
-        remain = 0xffffffff / (DIMENSION - hmwt + pos);
-        div = 0xffffffff - remain * (DIMENSION - hmwt + pos);
+        remain = 0xffffffff / (DIMENSION - hmwt + pos + 1);
+        div = 0xffffffff - remain * (DIMENSION - hmwt + pos + 1);
         div++;
         deg = deg / remain;
         if (((0xffffffff - div) > deg) && pos < hmwt) {
