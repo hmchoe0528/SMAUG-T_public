@@ -17,7 +17,7 @@
 void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
          const size_t input_size, const uint16_t hmwt) {
 
-    uint32_t pos = 0;
+    uint32_t pos = 0, div = 0, remain = 0;
     uint32_t buf[SHAKE256_RATE * 2] = {0};
 
     uint8_t xof_block = (hmwt == HS) ? HS_XOF : HR_XOF;
@@ -26,34 +26,26 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
     shake256_absorb_once(&state, input, input_size);
     shake256_squeezeblocks((uint8_t *)buf, xof_block, &state);
 
-    // Precompute constants to avoid repeating these calculations
-    uint32_t dimension_minus_hmwt = DIMENSION - hmwt;
-    uint32_t total_iterations = xof_block * 32;
-    uint32_t buf_offset = xof_block * 32;
-    uint32_t max_degree = 0xffffffff;
-
-    for (size_t i = 0; i < total_iterations; i++) {
+    for (int i = 0; i < xof_block * 32; i++) {
         uint32_t deg = buf[i];
-        uint32_t remain = max_degree / (dimension_minus_hmwt + pos);
-        uint32_t div = max_degree - remain * (dimension_minus_hmwt + pos) + 1;
-
-        if ((max_degree - div) > deg && (pos < hmwt)) {
-            res[dimension_minus_hmwt + pos] = res[div];
-            res[div] = ((buf[buf_offset + (i >> 4)] >> (i & 0x0f)) & 0x02) - 1;
+        remain = 0xffffffff / (DIMENSION - hmwt + pos);
+        div = 0xffffffff - remain * (DIMENSION - hmwt + pos);
+        div++;
+        deg = deg / remain;
+        if (((0xffffffff - div) > deg) && pos < hmwt) {
+            res[DIMENSION - hmwt + pos] = res[deg];
+            res[deg] =
+                ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
             pos++;
-        } else {
-            uint32_t garbage = res[div];
-            garbage = ((buf[buf_offset + (i >> 4)] >> (i & 0x0f)) & 0x02) - 1;
         }
     }
 
     if (pos != hmwt)
         fprintf(stderr, "hwt sampling error\n");
 
-    memset(cnt_arr, 0, sizeof(uint8_t) * (DIMENSION / 8));
-    for (size_t i = 0; i < DIMENSION; ++i) {
-        uint8_t bit = res[i] & 0x01;
-        size_t cnt_arr_idx = (i >> 8) & (-bit);
-        cnt_arr[cnt_arr_idx] += bit;
+    size_t cnt_arr_idx = 0;
+    for (int i = 0; i < DIMENSION; ++i) {
+        cnt_arr_idx = ((i & 0x700) >> 8) & (-(res[i] & 0x01));
+        cnt_arr[cnt_arr_idx] += (res[i] & 0x01);
     }
 }
