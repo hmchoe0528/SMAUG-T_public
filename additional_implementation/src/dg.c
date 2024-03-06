@@ -45,7 +45,7 @@
  **************************************************/
 int addGaussianError(poly *op, const uint8_t *seed) {
     uint64_t seed_temp[SEED_LEN] = {0};
-    shake128((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
+    shake256((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
              CRYPTO_BYTES + sizeof(size_t));
 
     uint16_t j = 0;
