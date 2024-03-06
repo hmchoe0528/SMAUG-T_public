@@ -211,7 +211,7 @@ void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
          1);
 
     ALIGNED_UINT64(SEED_LEN) seed_temp[4];
-    shake128x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+    shake256x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
                (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
                SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
                extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
@@ -234,7 +234,7 @@ void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
          1);
 
     ALIGNED_UINT64(SEED_LEN) seed_temp[4];
-    shake128x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+    shake256x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
                (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
                SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
                extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
@@ -263,7 +263,7 @@ void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
          1);
 
     ALIGNED_UINT64(SEED_LEN) seed_temp[5];
-    shake128x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+    shake256x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
                (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
                SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
                extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
@@ -272,7 +272,7 @@ void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
     // for remaining (i = 5)
     cmov(extseed[3].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[4], sizeof(size_t),
          1);
-    shake128((uint8_t *)seed_temp[4].coeffs, SEED_LEN * sizeof(uint64_t),
+    shake256((uint8_t *)seed_temp[4].coeffs, SEED_LEN * sizeof(uint64_t),
              extseed[3].coeffs, CRYPTO_BYTES + sizeof(size_t));
 
     addGaussianError(&(op->vec[0]), seed_temp[0].coeffs);

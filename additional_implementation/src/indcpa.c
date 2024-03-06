@@ -1,6 +1,6 @@
 #include "indcpa.h"
-#include "randombytes.h"
 #include "poly.h"
+#include "randombytes.h"
 
 /************************************************
  * Name:        genRx_vec
@@ -47,7 +47,7 @@ void indcpa_keypair(uint8_t pk[PUBLICKEY_BYTES],
 
     uint8_t seed[CRYPTO_BYTES + PKSEED_BYTES] = {0};
     randombytes(seed, CRYPTO_BYTES);
-    shake128(seed, CRYPTO_BYTES + PKSEED_BYTES, seed, CRYPTO_BYTES);
+    shake256(seed, CRYPTO_BYTES + PKSEED_BYTES, seed, CRYPTO_BYTES);
 
     genSx_vec(&sk_tmp, seed);
 
@@ -80,7 +80,7 @@ void indcpa_keypair(uint8_t pk[PUBLICKEY_BYTES],
  **************************************************/
 void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
                 const uint8_t pk[PUBLICKEY_BYTES],
-                const uint8_t mu[MSG_BYTES],   // EDIT-TiMER
+                const uint8_t mu[MSG_BYTES], // EDIT-TiMER
                 const uint8_t seed[DELTA_BYTES]) {
 
     uint8_t seed_r[DELTA_BYTES] = {0};
@@ -101,7 +101,7 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
     ciphertext ctxt_tmp;
     memset(&ctxt_tmp, 0, sizeof(ciphertext));
     computeC1(&(ctxt_tmp.c1), pk_tmp.A, r);
-    computeC2(&ctxt_tmp.c2, mu, &pk_tmp.b, r);  // EDIT-TiMER
+    computeC2(&ctxt_tmp.c2, mu, &pk_tmp.b, r); // EDIT-TiMER
 
     save_to_string(ctxt, &ctxt_tmp);
     for (size_t i = 0; i < MODULE_RANK; ++i) {
@@ -123,8 +123,7 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
  *              - ciphertext *ctxt: pointer to input ciphertext
  *                (a structure composed of (vector c1, c2))
  **************************************************/
-void indcpa_dec(uint8_t delta[MSG_BYTES],
-                const uint8_t sk[PKE_SECRETKEY_BYTES],
+void indcpa_dec(uint8_t delta[MSG_BYTES], const uint8_t sk[PKE_SECRETKEY_BYTES],
                 const uint8_t ctxt[CIPHERTEXT_BYTES]) {
     poly delta_temp;
     polyvec c1_temp;
@@ -138,33 +137,34 @@ void indcpa_dec(uint8_t delta[MSG_BYTES],
 
     c1_temp = ctxt_tmp.c1;
     delta_temp = ctxt_tmp.c2;
-    for (uint16_t i = 0; i < LWE_N; ++i){
-    
-    	delta_temp.coeffs[i] <<= _16_LOG_P2;
+    for (uint16_t i = 0; i < LWE_N; ++i) {
+
+        delta_temp.coeffs[i] <<= _16_LOG_P2;
     }
-    for (size_t i = 0; i < MODULE_RANK; ++i){
-        for (size_t j = 0; j < LWE_N; ++j){
-            c1_temp.vec[i].coeffs[j] <<= _16_LOG_P;}
+    for (size_t i = 0; i < MODULE_RANK; ++i) {
+        for (size_t j = 0; j < LWE_N; ++j) {
+            c1_temp.vec[i].coeffs[j] <<= _16_LOG_P;
+        }
     }
 
     // Compute delta = (delta + c1^T * s)
     vec_vec_mult_add(&delta_temp, &c1_temp, sk_tmp.sp_vec);
-    #if MSG_BYTES == 16
- 	poly_tomsg(delta, &delta_temp); 
-	#elif MSG_BYTES == 32
-	    // Compute delta = 2/p * delta
-	    for (uint16_t i = 0; i < LWE_N; ++i) {
-	        delta_temp.coeffs[i] += DEC_ADD;
-	        delta_temp.coeffs[i] >>= _16_LOG_T;
-	    }
-		// Set delta
-		memset(delta, 0, MSG_BYTES);
-		for (size_t i = 0; i < MSG_BYTES; ++i) {
-		    for (uint8_t j = 0; j < 8; ++j) {
-		        delta[i] ^= ((uint8_t)(delta_temp.coeffs[8 * i + j]) << j);
-		    }
-		}
-	#endif
+#if MSG_BYTES == 16
+    poly_tomsg(delta, &delta_temp);
+#elif MSG_BYTES == 32
+    // Compute delta = 2/p * delta
+    for (uint16_t i = 0; i < LWE_N; ++i) {
+        delta_temp.coeffs[i] += DEC_ADD;
+        delta_temp.coeffs[i] >>= _16_LOG_T;
+    }
+    // Set delta
+    memset(delta, 0, MSG_BYTES);
+    for (size_t i = 0; i < MSG_BYTES; ++i) {
+        for (uint8_t j = 0; j < 8; ++j) {
+            delta[i] ^= ((uint8_t)(delta_temp.coeffs[8 * i + j]) << j);
+        }
+    }
+#endif
     for (size_t i = 0; i < MODULE_RANK; ++i) {
         memset(sk_tmp.sp_vec[i].sx, 0, sk_tmp.sp_vec[i].cnt);
         free(sk_tmp.sp_vec[i].sx);
