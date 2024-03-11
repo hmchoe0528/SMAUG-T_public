@@ -45,7 +45,7 @@
  **************************************************/
 int addGaussianError(poly *op, const uint8_t *seed) {
     uint64_t seed_temp[SEED_LEN] = {0};
-    shake128((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
+    shake256((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
              CRYPTO_BYTES + sizeof(size_t));
 
     uint16_t j = 0;
@@ -63,20 +63,22 @@ int addGaussianError(poly *op, const uint8_t *seed) {
                (~x[4] & ~x[6] & x[8]) | (~x[7] & x[8]);
         s[1] = (x[1] & x[2] & x[4] & x[5] & x[7] & x[8]) |
                (x[3] & x[4] & x[5] & x[7] & x[8]) | (x[6] & x[7] & x[8]);
-		uint8_t index[64] = { 0, };
-		int tp = 0;
-		for (int i = 0; i < 64; i++)
-			index[i] = i;
+        uint8_t index[64] = {
+            0,
+        };
+        int tp = 0;
+        for (int i = 0; i < 64; i++)
+            index[i] = i;
 
-		FisherYates(index, 64);
-		for (int k = 0; k < 64; k++) {
-			tp = index[k];
-			op->coeffs[i + tp] =
-				((s[0] >> tp) & 0x01) | (((s[1] >> tp) & 0x01) << 1);
-			uint16_t sign = (x[9] >> tp) & 0x01;
-			op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
-				<< (_16_LOG_Q);
-		}
+        FisherYates(index, 64);
+        for (int k = 0; k < 64; k++) {
+            tp = index[k];
+            op->coeffs[i + tp] =
+                ((s[0] >> tp) & 0x01) | (((s[1] >> tp) & 0x01) << 1);
+            uint16_t sign = (x[9] >> tp) & 0x01;
+            op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
+                                 << (_16_LOG_Q);
+        }
 #endif
 #ifdef NOISE_D2
         uint64_t s[3];
@@ -101,21 +103,23 @@ int addGaussianError(poly *op, const uint8_t *seed) {
         s[2] = (x[1] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]) |
                (x[2] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]) |
                (x[3] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]);
-		uint8_t index[64] = { 0, };
-		int tp = 0;
-		for (int i = 0; i < 64; i++)
-			index[i] = i;
+        uint8_t index[64] = {
+            0,
+        };
+        int tp = 0;
+        for (int i = 0; i < 64; i++)
+            index[i] = i;
 
-		FisherYates(index, 64);
-		for (int k = 0; k < 64; k++) {
-			tp = index[k];
-			op->coeffs[i + tp] = ((s[0] >> tp) & 0x01) |
-				(((s[1] >> tp) & 0x01) << 1) |
-				(((s[2] >> tp) & 0x01) << 2);
-			uint16_t sign = (x[10] >> tp) & 0x01;
-			op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
-				<< _16_LOG_Q;
-		}
+        FisherYates(index, 64);
+        for (int k = 0; k < 64; k++) {
+            tp = index[k];
+            op->coeffs[i + tp] = ((s[0] >> tp) & 0x01) |
+                                 (((s[1] >> tp) & 0x01) << 1) |
+                                 (((s[2] >> tp) & 0x01) << 2);
+            uint16_t sign = (x[10] >> tp) & 0x01;
+            op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
+                                 << _16_LOG_Q;
+        }
 #endif
 #ifdef NOISE_D3
         uint64_t s[3];
@@ -149,21 +153,23 @@ int addGaussianError(poly *op, const uint8_t *seed) {
                (x[3] & x[5] & x[6] & x[8] & x[9] & x[10]) |
                (x[4] & x[5] & x[6] & x[8] & x[9] & x[10]) |
                (x[7] & x[8] & x[9] & x[10]);
-		uint8_t index[64] = { 0, };
-		int tp = 0;
-		for (int i = 0; i < 64; i++)
-			index[i] = i;
+        uint8_t index[64] = {
+            0,
+        };
+        int tp = 0;
+        for (int i = 0; i < 64; i++)
+            index[i] = i;
 
-		FisherYates(index, 64);
-		for (int k = 0; k < 64; k++) {
-			tp = index[k];
-			op->coeffs[i + tp] = ((s[0] >> tp) & 0x01) |
-				(((s[1] >> tp) & 0x01) << 1) |
-				(((s[2] >> tp) & 0x01) << 2);
-			uint16_t sign = (x[11] >> tp) & 0x01;
-			op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
-				<< _16_LOG_Q;
-		}
+        FisherYates(index, 64);
+        for (int k = 0; k < 64; k++) {
+            tp = index[k];
+            op->coeffs[i + tp] = ((s[0] >> tp) & 0x01) |
+                                 (((s[1] >> tp) & 0x01) << 1) |
+                                 (((s[2] >> tp) & 0x01) << 2);
+            uint16_t sign = (x[11] >> tp) & 0x01;
+            op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
+                                 << _16_LOG_Q;
+        }
 #endif
 #ifdef NOISE_D4
         uint64_t s[4];
@@ -205,21 +211,23 @@ int addGaussianError(poly *op, const uint8_t *seed) {
                (~x[6] & x[7] & x[8] & x[9]) | (~x[4] & x[7] & x[8] & x[9]) |
                (~x[2] & x[7] & x[8] & x[9]);
         s[3] = (x[2] & x[3] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]);
-		uint8_t index[64] = { 0, };
-		int tp = 0;
-		for (int i = 0; i < 64; i++)
-			index[i] = i;
+        uint8_t index[64] = {
+            0,
+        };
+        int tp = 0;
+        for (int i = 0; i < 64; i++)
+            index[i] = i;
 
-		FisherYates(index, 64);
-		for (int k = 0; k < 64; k++) {
-			tp = index[k];
-			op->coeffs[i + tp] =
-				((s[0] >> tp) & 0x01) | (((s[1] >> tp) & 0x01) << 1) |
-				(((s[2] >> tp) & 0x01) << 2) | (((s[3] >> tp) & 0x01) << 3);
-			uint16_t sign = (x[10] >> tp) & 0x01;
-			op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
-				<< _16_LOG_Q;
-		}
+        FisherYates(index, 64);
+        for (int k = 0; k < 64; k++) {
+            tp = index[k];
+            op->coeffs[i + tp] =
+                ((s[0] >> tp) & 0x01) | (((s[1] >> tp) & 0x01) << 1) |
+                (((s[2] >> tp) & 0x01) << 2) | (((s[3] >> tp) & 0x01) << 3);
+            uint16_t sign = (x[10] >> tp) & 0x01;
+            op->coeffs[i + tp] = (((-sign) ^ op->coeffs[i + tp]) + sign)
+                                 << _16_LOG_Q;
+        }
 #endif
         j += RAND_BITS;
     }

@@ -84,7 +84,7 @@ void poly_mult_add(poly *res, const poly *op1, const sppoly *op2) {
     for (size_t j = op2->neg_start; j < op2->cnt; ++j) {
         poly_sub(temp, op1, (op2->sx)[j]);
     }
-	poly_reduce_keyGen(res, temp);
+    poly_reduce(res, temp);
 }
 
 /*************************************************
@@ -111,7 +111,7 @@ void poly_mult_sub(poly *res, const poly *op1, const sppoly *op2) {
     for (size_t j = op2->neg_start; j < op2->cnt; ++j) {
         poly_add(temp, op1, (op2->sx)[j]);
     }
-    poly_reduce(res, temp);
+    poly_reduce_keyGen(res, temp);	
 }
 
 /*************************************************
@@ -236,13 +236,23 @@ uint8_t convToIdx(uint8_t *res, const uint8_t res_length, const uint8_t *op,
 
 void FisherYates(uint8_t *arr, int n)
 {
-	int i, j, tmp;
+	int i;
+	uint8_t j, tmp;
+	uint8_t *seed;
+
+	seed = (uint8_t*) malloc(n * sizeof(uint8_t));
+
+	randombytes(seed, n);
+	shake128(seed, n, seed, n);
 
 	for (i = n - 1; i > 0; i--)
 	{
-		j = rand() % (i + 1);
+		seed[i] += i;
+		j = (seed[i] * seed[i]) - (seed[i] * seed[i] / (i + 1)) * (i + 1);
+
 		tmp = arr[j];
 		arr[j] = arr[i];
 		arr[i] = tmp;
 	}
+	free(seed);
 }
