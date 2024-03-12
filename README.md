@@ -1,5 +1,5 @@
 # SMAUG-T_public
-SMAUG-T reference code (public release). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-T).
+SMAUG-T reference code (public release). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-t).
 
 
 # Build
@@ -29,7 +29,6 @@ $ make kat # It requires OpenSSL
 If the build was successful, result files will be generated in the `build` directory. To run each test, execute as follows
 
 ```bash
-# In the build/bin directory
 $ ./smaug-t1-main
 $ ./smaug-t1-speed
 $ ./PQCgenKAT_smaug-t1
