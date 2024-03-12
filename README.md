@@ -1,5 +1,5 @@
 # SMAUG-T_public
-SMAUG-T reference code (public release). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-T).
+SMAUG-T reference code (public release). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-t).
 
 
 # Build
