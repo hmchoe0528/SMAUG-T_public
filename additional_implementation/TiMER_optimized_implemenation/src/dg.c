@@ -23,18 +23,13 @@
  * Description: Sample discret Gaussian noise e and add e to op
  *
  * Arguments:   - uint16_t *op: pointer to output vector op
- *              - uint8_t *seed: pointer to input seed of length CRYPTO_BYTES +
- *                               sizeof(size_t))
+ *              - uint64_t *seed: pointer to input seed of SEED_LEN)
  **************************************************/
-int addGaussianError(poly *op, const uint8_t *seed) {
-    uint64_t seed_temp[SEED_LEN] = {0};
-    shake256((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
-             CRYPTO_BYTES + sizeof(size_t));
-
+int addGaussianError(poly *op, uint64_t *seed) {
     uint16_t j = 0;
 
     for (size_t i = 0; i < LWE_N; i += 64) {
-        uint64_t *x = seed_temp + j;
+        uint64_t *x = seed + j;
         uint64_t s[3];
         s[0] = (x[0] & x[1] & x[2] & x[3] & x[5] & x[7] & x[8]) |
                (x[1] & x[2] & x[3] & x[5] & ~x[6] & x[7] & x[9]) |
@@ -72,11 +67,27 @@ int addGaussianError(poly *op, const uint8_t *seed) {
 }
 
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
-    uint8_t seed_tmp[CRYPTO_BYTES + sizeof(size_t)] = {0};
-    cmov(seed_tmp, seed, CRYPTO_BYTES, 1);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        size_t nonce = MODULE_RANK * i;
-        cmov(seed_tmp + CRYPTO_BYTES, (uint8_t *)&nonce, sizeof(size_t), 1);
-        addGaussianError(&(op->vec[i]), seed_tmp);
-    }
+    ALIGNED_UINT8(CRYPTO_BYTES + sizeof(size_t)) extseed[4];
+    __m256i f;
+    f = _mm256_loadu_si256((__m256i *)seed);
+
+    _mm256_store_si256(extseed[0].vec, f);
+    _mm256_store_si256(extseed[1].vec, f);
+
+    size_t nonce[2] = {MODULE_RANK * 0, MODULE_RANK * 1};
+
+    cmov(extseed[0].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[0], sizeof(size_t),
+         1);
+    cmov(extseed[1].coeffs + CRYPTO_BYTES, (uint8_t *)&nonce[1], sizeof(size_t),
+         1);
+
+    ALIGNED_UINT64(SEED_LEN) seed_temp[4];
+    shake256x4((uint8_t *)seed_temp[0].coeffs, (uint8_t *)seed_temp[1].coeffs,
+               (uint8_t *)seed_temp[2].coeffs, (uint8_t *)seed_temp[3].coeffs,
+               SEED_LEN * sizeof(uint64_t), extseed[0].coeffs,
+               extseed[1].coeffs, extseed[2].coeffs, extseed[3].coeffs,
+               CRYPTO_BYTES + sizeof(size_t));
+
+    addGaussianError(&(op->vec[0]), seed_temp[0].coeffs);
+    addGaussianError(&(op->vec[1]), seed_temp[1].coeffs);
 }
