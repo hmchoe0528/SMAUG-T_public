@@ -36,7 +36,7 @@ set(SRCS
 )
 
 set(SRCS_RNG
-    ${PROJECT_SOURCE_DIR}/src/rng.c)
+    ${PROJECT_SOURCE_DIR}/src/randombytes.c)
 
 set(SRCS_FIPS202
     ${PROJECT_SOURCE_DIR}/src/keccak/KeccakP-1600-times4-SIMD256.c
@@ -59,12 +59,11 @@ include_directories(${PROJECT_SOURCE_DIR}/include/keccak)
 
 set(LIB_RNG RNG)
 add_library(${LIB_RNG} SHARED ${SRCS_RNG})
-target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC)
-target_link_libraries(${LIB_RNG} PRIVATE OpenSSL::Crypto)
+target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC -mavx2 -mbmi2 -mpopcnt)
 
 set(LIB_FIPS202 FIPS202)
 add_library(${LIB_FIPS202} SHARED ${SRCS_FIPS202})
-target_compile_options(${LIB_FIPS202} PRIVATE ${C_FLAGS})
+target_compile_options(${LIB_FIPS202} PRIVATE -O3 -fomit-frame-pointer -fPIC -mavx2 -mbmi2 -mpopcnt)
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy during build" OFF)
 if(ENABLE_CLANG_TIDY)
