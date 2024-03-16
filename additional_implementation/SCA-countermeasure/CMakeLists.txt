@@ -46,7 +46,7 @@ find_package(OpenSSL REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(LIB_RNG RNG)
-add_library(${LIB_RNG} ${LIB_FIPS202} SHARED ${PROJECT_SOURCE_DIR}/src/randombytes.c)
+add_library(${LIB_RNG} SHARED ${PROJECT_SOURCE_DIR}/src/randombytes.c)
 target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC)
 
 set(LIB_FIPS202 FIPS202)

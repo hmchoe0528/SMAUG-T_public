@@ -35,7 +35,7 @@ set(SRCS
 )
 
 set(SRCS_RNG
-    ${PROJECT_SOURCE_DIR}/src/rng.c)
+    ${PROJECT_SOURCE_DIR}/src/randombytes.c)
 
 
 if(MSVC)
@@ -50,8 +50,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(LIB_RNG RNG)
 add_library(${LIB_RNG} SHARED ${SRCS_RNG})
-target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC)
-target_link_libraries(${LIB_RNG} PRIVATE OpenSSL::Crypto)
+target_compile_options(${LIB_RNG} PRIVATE -O3 -fomit-frame-pointer -fPIC -mavx2 -mbmi2 -mpopcnt)
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy during build" OFF)
 if(ENABLE_CLANG_TIDY)
@@ -105,19 +104,19 @@ set(LIB_NAME1 ${PROJECT_NAME}1-90s)
 add_library(${LIB_NAME1} SHARED ${SRCS_90S})
 target_compile_definitions(${LIB_NAME1} PUBLIC SMAUG_MODE=1)
 target_compile_options(${LIB_NAME1} PRIVATE ${C_FLAGS})
-target_link_libraries(${LIB_NAME1} PUBLIC ${LIB_RNG})
+target_link_libraries(${LIB_NAME1} PUBLIC ${LIB_RNG} OpenSSL::Crypto)
 
 set(LIB_NAME3 ${PROJECT_NAME}3-90s)
 add_library(${LIB_NAME3} SHARED ${SRCS_90S})
 target_compile_definitions(${LIB_NAME3} PUBLIC SMAUG_MODE=3)
 target_compile_options(${LIB_NAME3} PRIVATE ${C_FLAGS})
-target_link_libraries(${LIB_NAME3} PUBLIC ${LIB_RNG})
+target_link_libraries(${LIB_NAME3} PUBLIC ${LIB_RNG} OpenSSL::Crypto)
 
 set(LIB_NAME5 ${PROJECT_NAME}5-90s)
 add_library(${LIB_NAME5} SHARED ${SRCS_90S})
 target_compile_definitions(${LIB_NAME5} PUBLIC SMAUG_MODE=5)
 target_compile_options(${LIB_NAME5} PRIVATE ${C_FLAGS})
-target_link_libraries(${LIB_NAME5} PUBLIC ${LIB_RNG})
+target_link_libraries(${LIB_NAME5} PUBLIC ${LIB_RNG} OpenSSL::Crypto)
 
 add_subdirectory(test)
 add_subdirectory(kat)
