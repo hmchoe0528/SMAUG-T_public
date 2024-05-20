@@ -10,7 +10,7 @@
 #define timer_BYTES 16
 
 int timer_crypto_kem_keypair(uint8_t *pk, uint8_t *sk);
-int timer_crypto_kem_encap(uint8_t *ct, uint8_t *ss, const uint8_t *pk);
-int timer_crypto_kem_decap(uint8_t *ss, const uint8_t *sk, const uint8_t *pk,
-                           const uint8_t *ctxt);
+int timer_crypto_kem_enc(uint8_t *ct, uint8_t *ss, const uint8_t *pk);
+int timer_crypto_kem_dec(uint8_t *ss, const uint8_t *ctxt, const uint8_t *sk);
+
 #endif // KEM_TIMER_H

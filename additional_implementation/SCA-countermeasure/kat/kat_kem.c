@@ -8,10 +8,10 @@ int kat_crypto_kem_keypair(unsigned char *pk, unsigned char *sk) {
 
 int kat_crypto_kem_enc(unsigned char *ct, unsigned char *ss,
                        unsigned char *pk) {
-    return crypto_kem_encap(ct, ss, pk);
+    return crypto_kem_enc(ct, ss, pk);
 }
 
-int kat_crypto_kem_dec(unsigned char *ss1, unsigned char *ct, unsigned char *pk,
+int kat_crypto_kem_dec(unsigned char *ss, unsigned char *ct,
                        unsigned char *sk) {
-    return crypto_kem_decap(ss1, sk, pk, ct);
+    return crypto_kem_dec(ss, ct, sk);
 }

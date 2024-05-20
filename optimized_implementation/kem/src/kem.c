@@ -14,10 +14,12 @@
 void crypto_kem_keypair(uint8_t *pk, uint8_t *sk) {
     indcpa_keypair(pk, sk);
     randombytes(sk + PKE_SECRETKEY_BYTES, T_BYTES);
+    for (int i = 0; i < PUBLICKEY_BYTES; i++)
+        sk[i + PKE_SECRETKEY_BYTES + T_BYTES] = pk[i];
 }
 
 /*************************************************
- * Name:        crypto_kem_encap
+ * Name:        crypto_kem_enc
  *
  * Description: Generates ciphertext and shared
  *              secret for given public key.
@@ -31,7 +33,7 @@ void crypto_kem_keypair(uint8_t *pk, uint8_t *sk) {
  *
  * Returns 0(success) or 1(failure).
  **************************************************/
-int crypto_kem_encap(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
+int crypto_kem_enc(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
     uint8_t mu[DELTA_BYTES] = {0}; // shared secret and seed
     uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0};
 
@@ -47,7 +49,7 @@ int crypto_kem_encap(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
 }
 
 /*************************************************
- * Name:        crypto_kem_decap
+ * Name:        crypto_kem_dec
  *
  * Description: Generates shared secret for given
  *              ciphertext and private key.
@@ -64,12 +66,12 @@ int crypto_kem_encap(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
  * Returns 0(success) or 1(failure).
  * On failure, ss will contain a pseudo-random value.
  **************************************************/
-int crypto_kem_decap(uint8_t *ss, const uint8_t *sk, const uint8_t *pk,
-                     const uint8_t *ctxt) {
-    uint8_t mu[DELTA_BYTES] = {0}; // shared secret and seed
-    uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0};
+int crypto_kem_dec(uint8_t *ss, const uint8_t *ctxt, const uint8_t *sk) {
+    uint8_t mu[DELTA_BYTES] = {0};
+    uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0}; // shared secret and seed
     uint8_t buf_tmp[DELTA_BYTES + CRYPTO_BYTES] = {0};
     uint8_t hash_res[SHA3_256_HashSize] = {0};
+    const uint8_t *pk = sk + PKE_SECRETKEY_BYTES + T_BYTES;
 
     indcpa_dec(mu, sk, ctxt);
     hash_h(hash_res, pk, PUBLICKEY_BYTES);

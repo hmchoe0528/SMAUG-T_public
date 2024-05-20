@@ -305,7 +305,7 @@ void testCiphertextLoadStore(bool isPKE, bool useFile) {
         if (isPKE)
             indcpa_enc(ctxt, pk, mx, seed);
         else {
-            int encryptRes = crypto_kem_encap(ctxt, mx, pk);
+            int encryptRes = crypto_kem_enc(ctxt, mx, pk);
             ASSERT_EQ(encryptRes, 0) << "crypto_kem_encapsulation failed";
         }
 
@@ -344,7 +344,7 @@ void testCiphertextEncDec(bool isPKE) {
         if (isPKE) {
             indcpa_enc(ctxt, pk, mx, seed);
         } else {
-            int encapRes = crypto_kem_encap(ctxt, mx, pk);
+            int encapRes = crypto_kem_enc(ctxt, mx, pk);
             ASSERT_EQ(encapRes, 0) << "crypto_kem_encapsulation failed";
         }
 
@@ -352,7 +352,7 @@ void testCiphertextEncDec(bool isPKE) {
         if (isPKE) {
             indcpa_dec(mx2, sk, ctxt);
         } else {
-            int decapRes = crypto_kem_decap(mx2, sk, pk, ctxt);
+            int decapRes = crypto_kem_dec(mx2, ctxt, sk);
             ASSERT_EQ(decapRes, 0) << "crypto_kem_decapsulation failed";
         }
 

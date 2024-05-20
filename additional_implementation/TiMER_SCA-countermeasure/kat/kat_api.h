@@ -19,7 +19,6 @@ int kat_crypto_kem_keypair(unsigned char *pk, unsigned char *sk);
 
 int kat_crypto_kem_enc(unsigned char *ct, unsigned char *ss, unsigned char *pk);
 
-int kat_crypto_kem_dec(unsigned char *ss1, unsigned char *ct, unsigned char *pk,
-                       unsigned char *sk);
+int kat_crypto_kem_dec(unsigned char *ss, unsigned char *ct, unsigned char *sk);
 
 #endif /* kat_api_h */

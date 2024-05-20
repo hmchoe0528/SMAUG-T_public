@@ -38,7 +38,7 @@ int main() {
     srt = clock();
     for (i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        crypto_kem_encap(ctxt, ss1, pk);
+        crypto_kem_enc(ctxt, ss1, pk);
     }
     ed = clock();
     print_results("encap: ", t, NTESTS);
@@ -49,7 +49,7 @@ int main() {
     srt = clock();
     for (i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        crypto_kem_decap(ss2, sk, pk, ctxt);
+        crypto_kem_dec(ss2, ctxt, sk);
     }
     ed = clock();
     print_results("decap: ", t, NTESTS);

@@ -105,7 +105,7 @@ int main(int argc, const char **argv) {
 
         fprintf(fp_rsp, "\n");
 
-        if ((ret_val = kat_crypto_kem_dec(ss1, ct, pk, sk)) != 0) {
+        if ((ret_val = kat_crypto_kem_dec(ss1, ct, sk)) != 0) {
             printf("crypto_kem_dec returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }

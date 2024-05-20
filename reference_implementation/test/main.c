@@ -87,10 +87,10 @@ int kem_test() {
 
     uint8_t ctxt[CIPHERTEXT_BYTES] = {0};
     uint8_t ss[CRYPTO_BYTES] = {0}, ss2[CRYPTO_BYTES] = {0};
-    crypto_kem_encap(ctxt, ss, pk);
+    crypto_kem_enc(ctxt, ss, pk);
     // printf("Encap done\n");
 
-    int res = crypto_kem_decap(ss2, sk, pk, ctxt);
+    int res = crypto_kem_dec(ss2, ctxt, sk);
     // printf("Decap done\n");
 
     if (memcmp(ss, ss2, CRYPTO_BYTES) != 0) {

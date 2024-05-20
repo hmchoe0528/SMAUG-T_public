@@ -82,9 +82,6 @@
 #define CTPOLYVEC_BYTES (CTPOLY1_BYTES * MODULE_RANK)                           // vector with element in R_p
 
 
-#define PKE_SECRETKEY_BYTES (SKPOLYVEC_BYTES + 2 * MODULE_RANK)                 // s(x) vector, neg_start vector, cnt_arr
-#define KEM_SECRETKEY_BYTES (PKE_SECRETKEY_BYTES + T_BYTES)                     // s(x) vector, neg_start vector, cnt_arr, t
-
 #define CIPHERTEXT_BYTES (CTPOLYVEC_BYTES + CTPOLY2_BYTES)                      // (vector c21, c22)
 
 #define PKSEED_BYTES (32)                                                       // seed for a(x) 32
@@ -92,6 +89,9 @@
 #define PKPOLYVEC_BYTES (PKPOLY_BYTES * MODULE_RANK)                            // vector with element in R_q
 #define PKPOLYMAT_BYTES (PKPOLYVEC_BYTES * MODULE_RANK)                         // matrix with element in R_q
 #define PUBLICKEY_BYTES (PKSEED_BYTES + PKPOLYVEC_BYTES)                        // (A seed, b(x) vector)
+
+#define PKE_SECRETKEY_BYTES (SKPOLYVEC_BYTES + 2 * MODULE_RANK)                 // s(x) vector, neg_start vector, cnt_arr
+#define KEM_SECRETKEY_BYTES (PKE_SECRETKEY_BYTES + T_BYTES + PUBLICKEY_BYTES)   // s(x) vector, neg_start vector, cnt_arr, t, pk
 
 // clang-format on
 
