@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define timer_SECRETKEYBYTES 144
+#define timer_SECRETKEYBYTES 144 + 608
 #define timer_PUBLICKEYBYTES 608
 #define timer_CIPHERTEXTBYTES 672
 #define timer_BYTES 16
