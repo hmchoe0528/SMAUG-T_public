@@ -1,3 +1,7 @@
+"""
+This is not used anymore,
+after using the modified CBD and refined parameters.
+"""
 # new version with pk and c2 compression
 from math import log
 from gmpy2 import mpq, mpz

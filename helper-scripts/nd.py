@@ -389,3 +389,17 @@ class NoiseDistribution:
         )
 
         return D
+
+    @staticmethod
+    def ModifiedCBD(numCBD, n=None):
+        if (numCBD != 0) & (numCBD != -1):
+            D = NoiseDistribution.CenteredBinomial(numCBD)
+        elif numCBD == 68:
+            # -1: 1/8, 0: 6/8 = 3/4, 1: 1/8
+            # mean = 0, stddev**2 = 1/8*1*2 = 1/4
+            D = NoiseDistribution(n=n, stddev=RR(1/2), mean=RR(0), density=1/RR(4), bounds=(-1, 1), tag="modifiedCBD")
+        elif numCBD == 58:
+            # -1: 3/16, 0: 5/8, 1: 3/16
+            # mean = 0, stddev**2 = 3/16*1*2 = 3/8
+            D = NoiseDistribution(n=n, stddev=sqrt(3/RR(8)), mean=RR(0), density=3/RR(8), bounds=(-1, 1), tag="modifiedCBD")
+        return D
