@@ -111,10 +111,11 @@ def expSmaugParams(n, k, q, p, T, hs, numCBD = 2, sigma = 1.0625, isTimer = Fals
     print(f"Sizes: pk={32+n*k*math.log(q, 2)/8:.0f}, ctxt={n*(k*math.log(p, 2)+math.log(T, 2))/8:.0f}, sk={16*math.ceil(hs/16)+32} bytes (may not be the case)")
     print("=" * 20)
 
-#print("Warning: The size of secret key may different a bit")
-#print("Warning: The lattice estimator runs for three cost models: MATZOV, ADPS16, and ADPS16_quantum. ")
-#print("It may take some time. You can turn off the lattice-estimator by setting run_estimator=0.")
-#print("Warning: The DFP computation only works for sigma = 1.0625 and 1.453713.")
+print("Warning: The size of secret key may different a bit")
+print("Warning: The lattice estimator may run for three cost models: MATZOV, ADPS16, and ADPS16_quantum. ")
+print("It may take some time. You can turn off the lattice-estimator by setting run_lwe and run_lwr to be False.")
+print("Warning: The DFP computation only works for some sigma, e.g., 1.0625 or 1.453713.")
+print("(Modified)CBD is used: \n CBD(1)  = {0:4/8, 1:1/4, -1:1/4} \nmCBD(58) = {0:5/8, -1:3/16, 1:3/16} (previously -1) \nmCBD(68)  = {0:6/8, -1:1/8, 1:1/8} (previously 0)")
 
 #########
 # TiMER #
@@ -123,36 +124,36 @@ def expSmaugParams(n, k, q, p, T, hs, numCBD = 2, sigma = 1.0625, isTimer = Fals
 #expSmaugParams(256, 2, 1024, 256, 8, hs=100, hr=132, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "TiMER")
 
 # Refined Params
-expSmaugParams(256, 2, 1024, 256, 8, 140, numCBD= 68, sigma=1.0625, isTimer=True, run_lwe=True, run_lwr=True, run_meet_lwe=True, run_dfp=True, tag = "TiMERNew1")
-expSmaugParams(256, 2, 1024, 256, 8, 120, numCBD=  1, sigma=1.2, isTimer=True, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "TiMERNew2")
-expSmaugParams(256, 2, 1024, 256, 8, 114, numCBD= 58, sigma=1.453713, isTimer=True, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "TiMERNew3")
+#expSmaugParams(256, 2, 1024, 256, 8, 140, numCBD= 68, sigma=1.0625, isTimer=True, run_lwe=True, run_lwr=True, run_meet_lwe=True, run_dfp=True, tag = "TiMERNew1")
+#expSmaugParams(256, 2, 1024, 256, 8, 120, numCBD=  1, sigma=1.2, isTimer=True, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "TiMERNew2")
+#expSmaugParams(256, 2, 1024, 256, 8, 114, numCBD= 58, sigma=1.453713, isTimer=True, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "TiMERNew3")
 
 ############
 # Smaug128 #
 ############
 # Round 2 param
-#expSmaugParams(256, 2, 1024, 256, 32, 140, 132, run_estimator=0, run_meet_lwe=False, tag = "Smaug128")
+#expSmaugParams(256, 2, 1024, 256, 32, hs=140, hr=132, run_estimator=0, run_meet_lwe=False, tag = "Smaug128")
 
 # Refined Params
-expSmaugParams(256, 2, 1024, 256, 32, 140, 0, numCBD=68, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug128New1")
-expSmaugParams(256, 2, 1024, 256, 64, 140, 0, numCBD=68, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug128New2")
+#expSmaugParams(256, 2, 1024, 256, 32, 140, numCBD=68, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug128New1")
+#expSmaugParams(256, 2, 1024, 256, 64, 140, numCBD=68, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug128New2")
 
 ############
 # Smaug192 #
 ############
 # Round 2 param
-#expSmaugParams(256, 3, 2l_error048, 256, 256, 198, 151, sigma=1.453713, run_estimator=0, run_meet_lwe=False, tag = "Smaug192")
+#expSmaugParams(256, 3, 2l_error048, 256, 256, hs=198, hr=151, sigma=1.453713, run_estimator=0, run_meet_lwe=False, tag = "Smaug192")
 
 # Refined Params
-expSmaugParams(256, 3, 2048, 512, 16, 264, 0, numCBD=58, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug192New1")
-expSmaugParams(256, 3, 2048, 512, 16, 264, 0, numCBD=1, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug192New2")
+#expSmaugParams(256, 3, 2048, 512, 16, 264, numCBD=58, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug192New1")
+#expSmaugParams(256, 3, 2048, 512, 16, 264, numCBD=1, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug192New2")
 
 ############
 # Smaug256 #
 ############
 # Round 2 param
-#expSmaugParams(256, 5, 2048, 256, 64, 176, 160, run_estimator=0, run_meet_lwe=False, tag = "Smaug256")
+#expSmaugParams(256, 5, 2048, 256, 64, hs=176, hr=160, run_estimator=0, run_meet_lwe=False, tag = "Smaug256")
 
 # Refined Params
-expSmaugParams(256, 4, 2048, 512, 128, 348, 0, numCBD=58, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug256New")
+expSmaugParams(256, 4, 2048, 512, 128, 348, numCBD=58, sigma=1.0625, run_lwe=True, run_lwr=True, run_meet_lwe=False, run_dfp=False, tag = "Smaug256New")
 
