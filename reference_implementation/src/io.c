@@ -38,22 +38,8 @@ void load_from_file(uint8_t *ctxt, const char *file_path) {
 /////////////////////////////////////////////////////////////////////////////
 
 void save_to_string_sk(uint8_t *output, const secret_key *sk) {
-    size_t idx = 0;
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        cmov(output + idx, &(sk->sp_vec[i].cnt), sizeof(uint8_t), 1);
-        idx += sizeof(uint8_t);
-    }
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        Sx_to_bytes(output + idx, sk->sp_vec[i].sx, sk->sp_vec[i].cnt);
-        idx += sk->sp_vec[i].cnt;
-    }
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        cmov(output + idx, &(sk->sp_vec[i].neg_start), sizeof(uint8_t), 1);
-        idx += sizeof(uint8_t);
-    }
+    for (size_t i = 0; i < MODULE_RANK; ++i)
+        Sx_to_bytes(output + SKPOLY_BYTES * i, &sk->vec[i]);
 }
 
 void save_to_file_sk(char *file_path, const uint8_t *sk, const int isPKE) {
@@ -68,24 +54,8 @@ void save_to_file_sk(char *file_path, const uint8_t *sk, const int isPKE) {
 }
 
 void load_from_string_sk(secret_key *sk, const uint8_t *input) {
-    size_t idx = 0;
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        cmov(&(sk->sp_vec[i].cnt), input + idx, sizeof(uint8_t), 1);
-        sk->sp_vec[i].sx =
-            (uint8_t *)calloc(sk->sp_vec[i].cnt, sizeof(uint8_t));
-        idx += sizeof(uint8_t);
-    }
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        bytes_to_Sx(sk->sp_vec[i].sx, input + idx, sk->sp_vec[i].cnt);
-        idx += sk->sp_vec[i].cnt;
-    }
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        cmov(&(sk->sp_vec[i].neg_start), input + idx, sizeof(uint8_t), 1);
-        idx += sizeof(uint8_t);
-    }
+    for (size_t i = 0; i < MODULE_RANK; ++i)
+        bytes_to_Sx(&sk->vec[i], input + SKPOLY_BYTES * i);
 }
 
 void load_from_file_sk(uint8_t *sk, const char *file_path, const int isPKE) {

@@ -22,7 +22,7 @@
 #endif
 
 #define hwt SMAUG_NAMESPACE(hwt)
-void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
-         const size_t input_size, const uint16_t hmwt);
+void hwt(int16_t *res, const uint8_t *input, const size_t input_size,
+         const uint16_t hmwt);
 
 #endif // SMAUG_HWT_H

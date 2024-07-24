@@ -14,8 +14,8 @@
  *              - size_t input_size: length of input seed
  *              - uint16_t hmwt: hamming weight to sample
  **************************************************/
-void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
-         const size_t input_size, const uint16_t hmwt) {
+void hwt(int16_t *res, const uint8_t *input, const size_t input_size,
+         const uint16_t hmwt) {
 
     uint32_t pos = 0, div = 0, remain = 0;
     uint32_t buf[SHAKE256_RATE * 2] = {0};
@@ -38,14 +38,5 @@ void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
                 ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
             pos++;
         }
-    }
-
-    if (pos != hmwt)
-        fprintf(stderr, "hwt sampling error\n");
-
-    size_t cnt_arr_idx = 0;
-    for (int i = 0; i < DIMENSION; ++i) {
-        cnt_arr_idx = ((i & 0x700) >> 8) & (-(res[i] & 0x01));
-        cnt_arr[cnt_arr_idx] += (res[i] & 0x01);
     }
 }

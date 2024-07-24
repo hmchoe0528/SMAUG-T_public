@@ -76,9 +76,10 @@
 #define CRYPTO_BYTES SHARED_SECRETE_BYTES                                       // 32
 
 #define CTPOLY1_BYTES (LWE_N)                                                   // element in R_p
-#define CTPOLY2_BYTES (LOG_P2 * LWE_N >> 3)                                     // element in R_p'
+#define CTPOLY2_BYTES (LOG_P2 * LWE_N / 8)                                      // element in R_p'
 
-#define SKPOLYVEC_BYTES (HS)                                                    // vector of secret polynomials
+#define SKPOLY_BYTES (LWE_N / 4)                                                // 64
+#define SKPOLYVEC_BYTES (SKPOLY_BYTES * MODULE_RANK)                            // vector of secret polynomials
 #define CTPOLYVEC_BYTES (CTPOLY1_BYTES * MODULE_RANK)                           // vector with element in R_p
 
 
@@ -90,8 +91,8 @@
 #define PKPOLYMAT_BYTES (PKPOLYVEC_BYTES * MODULE_RANK)                         // matrix with element in R_q
 #define PUBLICKEY_BYTES (PKSEED_BYTES + PKPOLYVEC_BYTES)                        // (A seed, b(x) vector)
 
-#define PKE_SECRETKEY_BYTES (SKPOLYVEC_BYTES + 2 * MODULE_RANK)                 // s(x) vector, neg_start vector, cnt_arr
-#define KEM_SECRETKEY_BYTES (PKE_SECRETKEY_BYTES + T_BYTES + PUBLICKEY_BYTES)   // s(x) vector, neg_start vector, cnt_arr, t, pk
+#define PKE_SECRETKEY_BYTES (SKPOLYVEC_BYTES)                                   // s(x) vector
+#define KEM_SECRETKEY_BYTES (PKE_SECRETKEY_BYTES + T_BYTES + PUBLICKEY_BYTES)   // s(x) vector, t, pk
 
 // clang-format on
 

@@ -33,6 +33,7 @@ set(srcs
     ${PROJECT_SOURCE_DIR}/src/indcpa.c
     ${PROJECT_SOURCE_DIR}/src/hash.c
     ${PROJECT_SOURCE_DIR}/src/verify.c
+    ${PROJECT_SOURCE_DIR}/src/toomcook.c
 )
 
 if(MSVC)
