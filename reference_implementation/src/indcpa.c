@@ -1,4 +1,5 @@
 #include "indcpa.h"
+#include "cbd.h"
 #include "randombytes.h"
 
 /*************************************************
@@ -9,14 +10,18 @@
  *
  * Arguments:   - polyvec *r: pointer to ouptput vector r
  *              - uint8_t *input: pointer to input seed (of length input_size)
- *              - size_t input_size: length of input seed
  **************************************************/
-void genRx_vec(polyvec *r, const uint8_t *input, const size_t input_size) {
-    int16_t res[DIMENSION] = {0};
-    hwt(res, input, input_size, HR);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        for (size_t j = 0; j < LWE_N; ++j)
-            r->vec[i].coeffs[j] = res[LWE_N * i + j];
+void genRx_vec(polyvec *r, const uint8_t *input) {
+    unsigned int i;
+    uint8_t buf[CBDSEED_BYTES] = {0};
+
+    for (i = 0; i < MODULE_RANK; ++i) {
+        uint8_t extseed[DELTA_BYTES + 1];
+        memcpy(extseed, input, DELTA_BYTES);
+        extseed[DELTA_BYTES] = i;
+
+        shake256(buf, CBDSEED_BYTES, extseed, DELTA_BYTES + 1);
+        poly_cbd(&r->vec[i], buf);
     }
 }
 
@@ -83,7 +88,7 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
         randombytes(seed_r, DELTA_BYTES);
     else
         cmov(seed_r, seed, DELTA_BYTES, 1);
-    genRx_vec(&r, seed_r, DELTA_BYTES);
+    genRx_vec(&r, seed_r);
 
     // Compute c1(x), c2(x)
     ciphertext ctxt_tmp;
