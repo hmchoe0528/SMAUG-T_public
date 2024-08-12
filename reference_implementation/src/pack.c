@@ -2,16 +2,54 @@
 #include <stdlib.h>
 
 /*************************************************
+ * Name:        store16_littleendian
+ *
+ * Description: store a 16-bit integer into 2 bytes
+ *              in little-endian order
+ *
+ * Arguments:   - uint8_t *out: pointer to output byte array
+ *              - int16_t *in: pointer to input int16_t array
+ *              - int inlen: input length
+ **************************************************/
+static void store16_littleendian(uint8_t *out, const int16_t *in,
+                                 const int inlen) {
+    int pos = 0;
+    for (int i = 0; i < inlen; ++i) {
+        out[pos] = in[i];
+        out[pos + 1] = in[i] >> 8;
+        pos += 2;
+    }
+}
+
+/*************************************************
+ * Name:        load16_littleendian
+ *
+ * Description: load 2 bytes into a 16-bit integer
+ *              in little-endian order
+ *
+ * Arguments:   - int16_t *out: pointer to output int16_t array
+ *              - int outlen: output length
+ *              - uint8_t *in: pointer to input byte array
+ **************************************************/
+static void load16_littleendian(int16_t *out, const int outlen,
+                                const uint8_t *in) {
+    int pos = 0;
+    for (int i = 0; i < outlen; ++i) {
+        out[i] = ((int16_t)(in[pos])) | ((int16_t)(in[pos + 1]) << 8);
+        pos += 2;
+    }
+}
+
+/*************************************************
  * Name:        Rq_to_bytes
  *
  * Description: Transform to bytes array from polynomial in Rq
  *
- * Arguments:   - uint16_t *bytes: pointer to output bytes
- *              - uint16_t *data: pointer to input polynomial in Rq
- *              - size_t dlen: date length
+ * Arguments:   - uint8_t *bytes: pointer to output bytes
+ *              - poly *data: pointer to input polynomial in Rq
  **************************************************/
 void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
-    uint16_t tmp[LWE_N] = {0};
+    int16_t tmp[LWE_N] = {0};
     int b_idx = 0, d_idx = 0;
 
 #if LOG_Q == 10
@@ -20,7 +58,7 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
         bytes[i] = data->coeffs[i] >> 8;
         tmp[i] = data->coeffs[i] & 0x00c0;
     }
-    uint16_t buf[DATA_OFFSET * 2] = {0};
+    int16_t buf[DATA_OFFSET * 2] = {0};
     for (i = 0; i < 2; ++i) {
         for (j = 0; j < DATA_OFFSET; ++j) {
             buf[b_idx + j] = tmp[d_idx + j] << 8;
@@ -35,9 +73,8 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
         b_idx += DATA_OFFSET;
         d_idx += DATA_OFFSET * 8;
     }
-    memcpy(bytes + LWE_N, (uint8_t *)buf, DATA_OFFSET * 2 * sizeof(uint16_t));
+    store16_littleendian(bytes + LWE_N, buf, DATA_OFFSET * 2);
 #endif
-
 #if LOG_Q == 11
     unsigned int i, j;
     for (i = 0; i < LWE_N; ++i) {
@@ -45,7 +82,7 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
         tmp[i] = data->coeffs[i] & 0x00e0;
     }
     int shift = 5;
-    uint16_t buf[DATA_OFFSET * 3] = {0};
+    int16_t buf[DATA_OFFSET * 3] = {0};
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < DATA_OFFSET; ++j) {
             buf[b_idx + j] = (tmp[j] >> shift) & 0x01;
@@ -59,7 +96,7 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
         d_idx += DATA_OFFSET * 5;
         shift++;
     }
-    memcpy(bytes + LWE_N, (uint8_t *)buf, DATA_OFFSET * 3 * sizeof(uint16_t));
+    store16_littleendian(bytes + LWE_N, buf, DATA_OFFSET * 3);
 #endif
 }
 
@@ -68,21 +105,21 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
  *
  * Description: Transform to polynomial in Rq from bytes array
  *
- * Arguments:   - uint16_t *data: pointer to output polynomial in Rq
- *              - uint16_t *bytes: pointer to input bytes
+ * Arguments:   - poly *data: pointer to output polynomial in Rq
+ *              - uint8_t *bytes: pointer to input bytes
  *              - size_t dlen: date length
  **************************************************/
 void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
-    uint16_t tmp[LWE_N] = {0};
+    int16_t tmp[LWE_N] = {0};
     int b_idx = 0, d_idx = 0;
 
 #if LOG_Q == 10
     unsigned int i, j;
     for (i = 0; i < LWE_N; ++i)
-        data->coeffs[i] = (uint16_t)bytes[i] << 8;
+        data->coeffs[i] = (int16_t)bytes[i] << 8;
 
-    uint16_t buf[DATA_OFFSET * 2] = {0};
-    memcpy((uint8_t *)buf, bytes + LWE_N, DATA_OFFSET * 2 * sizeof(uint16_t));
+    int16_t buf[DATA_OFFSET * 2] = {0};
+    load16_littleendian(buf, DATA_OFFSET * 2, bytes + LWE_N);
 
     for (i = 0; i < 2; ++i) {
         for (j = 0; j < DATA_OFFSET; ++j) {
@@ -101,14 +138,13 @@ void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
     for (i = 0; i < LWE_N; ++i)
         data->coeffs[i] |= tmp[i] & 0x00c0;
 #endif
-
 #if LOG_Q == 11
     unsigned int i, j;
     for (i = 0; i < LWE_N; ++i)
-        data->coeffs[i] = (uint16_t)bytes[i] << 8;
+        data->coeffs[i] = (int16_t)bytes[i] << 8;
 
-    uint16_t buf[DATA_OFFSET * 3] = {0};
-    memcpy((uint8_t *)buf, bytes + LWE_N, DATA_OFFSET * 3 * sizeof(uint16_t));
+    int16_t buf[DATA_OFFSET * 3] = {0};
+    load16_littleendian(buf, DATA_OFFSET * 3, bytes + LWE_N);
 
     int shift = 5;
     for (i = 0; i < 3; ++i) {
@@ -134,8 +170,8 @@ void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
  *
  * Description: Transform to bytes array from a vector of  polynomial in Rq
  *
- * Arguments:   - uint16_t *bytes: pointer to output bytes
- *              - uint16_t *data: pointer to input vector of polynomial in Rq
+ * Arguments:   - uint8_t *bytes: pointer to output bytes
+ *              - poly *data: pointer to input vector of polynomial in Rq
  **************************************************/
 void Rq_vec_to_bytes(uint8_t bytes[PKPOLYVEC_BYTES], const polyvec *data) {
     unsigned int i;
@@ -149,7 +185,7 @@ void Rq_vec_to_bytes(uint8_t bytes[PKPOLYVEC_BYTES], const polyvec *data) {
  * Description: Transform to bytes array from a vector of  polynomial in Rq
  *
  * Arguments:   - polyvec *data: pointer to output a vector of poly in Rq
- *              - uint16_t *bytes: pointer to input bytes
+ *              - uint8_t *bytes: pointer to input bytes
  **************************************************/
 void bytes_to_Rq_vec(polyvec *data, const uint8_t bytes[PKPOLYVEC_BYTES]) {
     unsigned int i;
@@ -162,7 +198,7 @@ void bytes_to_Rq_vec(polyvec *data, const uint8_t bytes[PKPOLYVEC_BYTES]) {
  *
  * Description: Transform to bytes array from a matrix of  polynomial in Rq
  *
- * Arguments:   - uint16_t *bytes: pointer to output bytes
+ * Arguments:   - uint8_t *bytes: pointer to output bytes
  *              - polyvec *data: pointer to input matrix of polynomial in Rq
  **************************************************/
 void Rq_mat_to_bytes(uint8_t bytes[PKPOLYMAT_BYTES],
@@ -177,8 +213,8 @@ void Rq_mat_to_bytes(uint8_t bytes[PKPOLYMAT_BYTES],
  *
  * Description: Transform to bytes array from a matrix of  polynomial in Rq
  *
- * Arguments:   - uint16_t *data: pointer to output a matrix of poly in Rq
- *              - uint16_t *bytes: pointer to input bytes
+ * Arguments:   - poly *data: pointer to output a matrix of poly in Rq
+ *              - uint8_t *bytes: pointer to input bytes
  **************************************************/
 void bytes_to_Rq_mat(polyvec data[MODULE_RANK],
                      const uint8_t bytes[PKPOLYMAT_BYTES]) {
@@ -192,14 +228,46 @@ void bytes_to_Rq_mat(polyvec data[MODULE_RANK],
  *
  * Description: Transform to bytes array from polynomial in Rp
  *
- * Arguments:   - uint16_t *bytes: pointer to output bytes
- *              - uint16_t *data: pointer to input polynomial in Rp
+ * Arguments:   - uint8_t *bytes: pointer to output bytes
+ *              - poly *data: pointer to input polynomial in Rp
  **************************************************/
 void Rp_to_bytes(uint8_t bytes[CTPOLY1_BYTES], const poly *data) {
+#if LOG_P == 8
     unsigned int i;
     memset(bytes, 0, sizeof(uint8_t) * CTPOLY1_BYTES);
     for (i = 0; i < LWE_N; ++i)
         memcpy(&(bytes[i]), &(data->coeffs[i]), sizeof(uint8_t));
+#endif
+#if LOG_P == 9
+    int16_t tmp[LWE_N] = {0};
+
+    unsigned int i;
+    for (i = 0; i < LWE_N; ++i) {
+        bytes[i] = data->coeffs[i] & 0xff;
+        tmp[i] = data->coeffs[i] & 0x00100;
+    }
+
+    int16_t buf[DATA_OFFSET] = {0};
+    for (i = 0; i < DATA_OFFSET; ++i) {
+        buf[i] = tmp[i] << 7;
+        buf[i] |= tmp[DATA_OFFSET + i] << 6;
+        buf[i] |= tmp[DATA_OFFSET * 2 + i] << 5;
+        buf[i] |= tmp[DATA_OFFSET * 3 + i] << 4;
+        buf[i] |= tmp[DATA_OFFSET * 4 + i] << 3;
+        buf[i] |= tmp[DATA_OFFSET * 5 + i] << 2;
+        buf[i] |= tmp[DATA_OFFSET * 6 + i] << 1;
+        buf[i] |= tmp[DATA_OFFSET * 7 + i];
+        buf[i] |= tmp[DATA_OFFSET * 8 + i] >> 1;
+        buf[i] |= tmp[DATA_OFFSET * 9 + i] >> 2;
+        buf[i] |= tmp[DATA_OFFSET * 10 + i] >> 3;
+        buf[i] |= tmp[DATA_OFFSET * 11 + i] >> 4;
+        buf[i] |= tmp[DATA_OFFSET * 12 + i] >> 5;
+        buf[i] |= tmp[DATA_OFFSET * 13 + i] >> 6;
+        buf[i] |= tmp[DATA_OFFSET * 14 + i] >> 7;
+        buf[i] |= tmp[DATA_OFFSET * 15 + i] >> 8;
+    }
+    store16_littleendian(bytes + LWE_N, buf, DATA_OFFSET);
+#endif
 }
 
 void Rp2_to_bytes(uint8_t bytes[CTPOLY2_BYTES], const poly *data) {
@@ -208,7 +276,7 @@ void Rp2_to_bytes(uint8_t bytes[CTPOLY2_BYTES], const poly *data) {
     unsigned int i;
     int b_idx = 0;
     int d_idx = 0;
-    for (i = 0; i < (LWE_N >> 3); ++i) {
+    for (i = 0; i < LWE_N / 8; ++i) {
         b_idx = 5 * i;
         d_idx = 8 * i;
 
@@ -226,28 +294,44 @@ void Rp2_to_bytes(uint8_t bytes[CTPOLY2_BYTES], const poly *data) {
                            ((data->coeffs[d_idx + 7] & 0x1f) << 3);
     }
 #endif
-
-#if LOG_P2 == 8
+#if LOG_P2 == 4
     unsigned int i;
-    for (i = 0; i < LWE_N; ++i)
-        memcpy(&(bytes[i]), &(data->coeffs[i]), sizeof(uint8_t));
-#endif
-
-#if LOG_P2 == 6
-    unsigned int i;
-    int b_idx = 0;
-    int d_idx = 0;
-    for (i = 0; i < (LWE_N >> 2); ++i) {
-        b_idx = 3 * i;
-        d_idx = 4 * i;
-
-        bytes[b_idx] = (data->coeffs[d_idx] & 0x3f) |
-                       ((data->coeffs[d_idx + 1] & 0x3) << 6);
-        bytes[b_idx + 1] = ((data->coeffs[d_idx + 1] & 0x3c) >> 2) |
-                           ((data->coeffs[d_idx + 2] & 0xf) << 4);
-        bytes[b_idx + 2] = ((data->coeffs[d_idx + 2] & 0x30) >> 4) |
-                           ((data->coeffs[d_idx + 3] & 0x3f) << 2);
+    for (i = 0; i < LWE_N / 2; ++i) {
+        bytes[i] = data->coeffs[2 * i] & 0x000f;
+        bytes[i] |= (data->coeffs[2 * i + 1] << 4) & 0x00f0;
     }
+#endif
+#if LOG_P2 == 7
+    int d_idx = CTPOLY2_BYTES;
+    unsigned int i, j;
+
+    int shift[7] = {1, 2, 3, 4, 5, 6, 7};
+    int16_t buf[DATA_OFFSET * 7] = {0};
+    for (i = 0; i < 2; ++i) {
+        for (j = 0; j < DATA_OFFSET; ++j) {
+            buf[j] |= (data->coeffs[d_idx + j] & 0x40) << shift[0];
+            buf[DATA_OFFSET + j] |= (data->coeffs[d_idx + j] & 0x20)
+                                    << shift[1];
+            buf[DATA_OFFSET * 2 + j] |= (data->coeffs[d_idx + j] & 0x10)
+                                        << shift[2];
+            buf[DATA_OFFSET * 3 + j] |= (data->coeffs[d_idx + j] & 0x08)
+                                        << shift[3];
+            buf[DATA_OFFSET * 4 + j] |= (data->coeffs[d_idx + j] & 0x04)
+                                        << shift[4];
+            buf[DATA_OFFSET * 5 + j] |= (data->coeffs[d_idx + j] & 0x02)
+                                        << shift[5];
+            buf[DATA_OFFSET * 6 + j] |= (data->coeffs[d_idx + j] & 0x01)
+                                        << shift[6];
+        }
+        d_idx += DATA_OFFSET;
+        for (j = 0; j < 7; ++j)
+            shift[j] += 8;
+    }
+
+    uint8_t tmp[CTPOLY2_BYTES] = {0};
+    store16_littleendian(tmp, buf, DATA_OFFSET * 7);
+    for (i = 0; i < CTPOLY2_BYTES; ++i)
+        bytes[i] = tmp[i] | (data->coeffs[i] & 0x7f);
 #endif
 }
 
@@ -257,22 +341,54 @@ void Rp2_to_bytes(uint8_t bytes[CTPOLY2_BYTES], const poly *data) {
  * Description: Transform to polynomial in Rp from bytes array
  *
  * Arguments:   - poly *data: pointer to output polynomial in Rq
- *              - uint16_t *bytes: pointer to input bytes
+ *              - uint8_t *bytes: pointer to input bytes
  **************************************************/
 void bytes_to_Rp(poly *data, const uint8_t bytes[CTPOLY1_BYTES]) {
+#if LOG_P == 8
     unsigned int i;
     memset(data, 0, sizeof(poly));
     for (i = 0; i < LWE_N; ++i)
         memcpy(&(data->coeffs[i]), &(bytes[i]), sizeof(uint8_t));
+#endif
+#if LOG_P == 9
+    int16_t tmp[LWE_N] = {0};
+    unsigned int i;
+    for (i = 0; i < LWE_N; ++i)
+        data->coeffs[i] = (int16_t)bytes[i];
+
+    int16_t buf[DATA_OFFSET] = {0};
+    load16_littleendian(buf, DATA_OFFSET, bytes + LWE_N);
+
+    for (i = 0; i < DATA_OFFSET; ++i) {
+        tmp[i] = buf[i] >> 7;
+        tmp[DATA_OFFSET + i] = buf[i] >> 6;
+        tmp[DATA_OFFSET * 2 + i] = buf[i] >> 5;
+        tmp[DATA_OFFSET * 3 + i] = buf[i] >> 4;
+        tmp[DATA_OFFSET * 4 + i] = buf[i] >> 3;
+        tmp[DATA_OFFSET * 5 + i] = buf[i] >> 2;
+        tmp[DATA_OFFSET * 6 + i] = buf[i] >> 1;
+        tmp[DATA_OFFSET * 7 + i] = buf[i];
+        tmp[DATA_OFFSET * 8 + i] = buf[i] << 1;
+        tmp[DATA_OFFSET * 9 + i] = buf[i] << 2;
+        tmp[DATA_OFFSET * 10 + i] = buf[i] << 3;
+        tmp[DATA_OFFSET * 11 + i] = buf[i] << 4;
+        tmp[DATA_OFFSET * 12 + i] = buf[i] << 5;
+        tmp[DATA_OFFSET * 13 + i] = buf[i] << 6;
+        tmp[DATA_OFFSET * 14 + i] = buf[i] << 7;
+        tmp[DATA_OFFSET * 15 + i] = buf[i] << 8;
+    }
+    for (i = 0; i < LWE_N; ++i)
+        data->coeffs[i] |= tmp[i] & 0x00100;
+#endif
 }
 
 void bytes_to_Rp2(poly *data, const uint8_t bytes[CTPOLY2_BYTES]) {
-    memset(data, 0, sizeof(uint16_t) * LWE_N);
+    memset(data, 0, sizeof(int16_t) * LWE_N);
 #if LOG_P2 == 5
     unsigned int i;
     int b_idx = 0;
     int d_idx = 0;
-    for (i = 0; i < (LWE_N >> 3); ++i) {
+    for (i = 0; i < LWE_N / 8; ++i) {
         b_idx = 5 * i;
         d_idx = 8 * i;
 
@@ -290,27 +406,45 @@ void bytes_to_Rp2(poly *data, const uint8_t bytes[CTPOLY2_BYTES]) {
         data->coeffs[d_idx + 7] = (bytes[b_idx + 4] & 0xf8) >> 3;
     }
 #endif
-
-#if LOG_P2 == 8
+#if LOG_P2 == 4
     unsigned int i;
-    for (i = 0; i < LWE_N; ++i)
-        memcpy(&(data->coeffs[i]), &(bytes[i]), sizeof(uint8_t));
+    for (i = 0; i < LWE_N / 2; ++i) {
+        data->coeffs[2 * i] = bytes[i] & 0x0f;
+        data->coeffs[2 * i + 1] = (bytes[i] & 0xf0) >> 4;
+    }
 #endif
+#if LOG_P2 == 7
+    int d_idx = CTPOLY2_BYTES;
+    unsigned int i, j;
+    for (i = 0; i < CTPOLY2_BYTES; ++i)
+        data->coeffs[i] = (int16_t)bytes[i] & 0x7f;
 
-#if LOG_P2 == 6
-    unsigned int i;
-    int b_idx = 0;
-    int d_idx = 0;
-    for (i = 0; i < (LWE_N >> 2); ++i) {
-        b_idx = 3 * i;
-        d_idx = 4 * i;
+    uint8_t tmp[CTPOLY2_BYTES] = {0};
+    int16_t buf[DATA_OFFSET * 7] = {0};
+    for (i = 0; i < CTPOLY2_BYTES; ++i)
+        tmp[i] = bytes[i] & 0x80;
+    load16_littleendian(buf, DATA_OFFSET * 7, tmp);
 
-        data->coeffs[d_idx] = bytes[b_idx] & 0x3f;
-        data->coeffs[d_idx + 1] =
-            ((bytes[b_idx] & 0xc0) >> 6) | ((bytes[b_idx + 1] & 0xf) << 2);
-        data->coeffs[d_idx + 2] =
-            ((bytes[b_idx + 1] & 0xf0) >> 4) | ((bytes[b_idx + 2] & 0x3) << 4);
-        data->coeffs[d_idx + 3] = (bytes[b_idx + 2] & 0xfc) >> 2;
+    int shift[7] = {1, 2, 3, 4, 5, 6, 7};
+    for (i = 0; i < 2; ++i) {
+        for (j = 0; j < DATA_OFFSET; ++j) {
+            data->coeffs[d_idx + j] |= (buf[j] >> shift[0]) & 0x40;
+            data->coeffs[d_idx + j] |=
+                (buf[DATA_OFFSET + j] >> shift[1]) & 0x20;
+            data->coeffs[d_idx + j] |=
+                (buf[DATA_OFFSET * 2 + j] >> shift[2]) & 0x10;
+            data->coeffs[d_idx + j] |=
+                (buf[DATA_OFFSET * 3 + j] >> shift[3]) & 0x08;
+            data->coeffs[d_idx + j] |=
+                (buf[DATA_OFFSET * 4 + j] >> shift[4]) & 0x04;
+            data->coeffs[d_idx + j] |=
+                (buf[DATA_OFFSET * 5 + j] >> shift[5]) & 0x02;
+            data->coeffs[d_idx + j] |=
+                (buf[DATA_OFFSET * 6 + j] >> shift[6]) & 0x01;
+        }
+        d_idx += DATA_OFFSET;
+        for (j = 0; j < 7; ++j)
+            shift[j] += 8;
     }
 #endif
 }
@@ -320,8 +454,8 @@ void bytes_to_Rp2(poly *data, const uint8_t bytes[CTPOLY2_BYTES]) {
  *
  * Description: Transform to bytes array from a vector of  polynomial in Rp
  *
- * Arguments:   - uint16_t *bytes: pointer to output bytes
- *              - uint16_t *data: pointer to input vector of polynomial in Rp
+ * Arguments:   - uint8_t *bytes: pointer to output bytes
+ *              - polyvec *data: pointer to input vector of polynomial in Rp
  **************************************************/
 void Rp_vec_to_bytes(uint8_t bytes[CTPOLYVEC_BYTES], const polyvec *data) {
     unsigned int i;
@@ -334,8 +468,8 @@ void Rp_vec_to_bytes(uint8_t bytes[CTPOLYVEC_BYTES], const polyvec *data) {
  *
  * Description: Transform to bytes array from a vector of  polynomial in Rp
  *
- * Arguments:   - uint16_t *data: pointer to output a vector of poly in Rp
- *              - uint16_t *bytes: pointer to input bytes
+ * Arguments:   - poly *data: pointer to output a vector of poly in Rp
+ *              - uint8_t *bytes: pointer to input bytes
  **************************************************/
 void bytes_to_Rp_vec(polyvec *data, const uint8_t bytes[CTPOLYVEC_BYTES]) {
     unsigned int i;
@@ -348,7 +482,7 @@ void bytes_to_Rp_vec(polyvec *data, const uint8_t bytes[CTPOLYVEC_BYTES]) {
  *
  * Description: Transform to bytes array from a degree of array of secrey poly
  *
- * Arguments:   - uint16_t *bytes: pointer to output bytes
+ * Arguments:   - uint8_t *bytes: pointer to output bytes
  *              - poly *data: pointer to input poly in Sn
  **************************************************/
 void Sx_to_bytes(uint8_t *bytes, const poly *data) {
@@ -369,7 +503,7 @@ void Sx_to_bytes(uint8_t *bytes, const poly *data) {
  * Description: Transform to a degree of array of secrey poly from bytes array
  *
  * Arguments:   - poly *data: pointer to output poly in Sn
- *              - uint16_t *bytes: pointer to input bytes
+ *              - uint8_t *bytes: pointer to input bytes
  **************************************************/
 void bytes_to_Sx(poly *data, const uint8_t *bytes) {
     unsigned int i;
