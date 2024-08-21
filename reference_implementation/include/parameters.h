@@ -16,7 +16,7 @@
 #define LOG_Q 10                // public key modulus
 #define LOG_P 8	                // ciphertext modulus
 #define LOG_P2 5                // ciphertext2 modulus
-#define HS 140                  // Hamming weight of coefficient vector s
+#define HS 70                  // Hamming weight of coefficient vector s
 
 #define RD_ADD2 0x0400          // 2^(15 - LOG_P2)
 #define RD_AND2 0xf800          // 2^16 - 2^(16 - LOG_P2)
@@ -32,7 +32,7 @@
 #define LOG_Q 11                // public key modulus
 #define LOG_P 9	                // ciphertext modulus
 #define LOG_P2 4                // ciphertext2 modulus
-#define HS 264                  // Hamming weight of coefficient vector s
+#define HS 88                  // Hamming weight of coefficient vector s
 
 #define RD_ADD2 0x0080          // 2^(15 - LOG_P2)
 #define RD_AND2 0xff00          // 2^16 - 2^(16 - LOG_P2)
@@ -48,7 +48,7 @@
 #define LOG_Q 11                // public key modulus
 #define LOG_P 9	                // ciphertext modulus
 #define LOG_P2 7                // ciphertext2 modulus
-#define HS 348                  // Hamming weight of coefficient vector s
+#define HS 87                  // Hamming weight of coefficient vector s
 
 #define RD_ADD2 0x0200          // 2^(15 - LOG_P2)
 #define RD_AND2 0xfc00          // 2^16 - 2^(16 - LOG_P2)

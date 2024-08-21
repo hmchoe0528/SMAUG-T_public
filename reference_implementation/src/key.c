@@ -55,11 +55,13 @@ void genBx(polyvec *b, const polyvec A[MODULE_RANK], const polyvec *s,
  *                                     length CRYPTO_BYTES)
  **************************************************/
 void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
-    int16_t res[DIMENSION] = {0};
-    hwt(res, seed, CRYPTO_BYTES, HS);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        for (size_t j = 0; j < LWE_N; ++j)
-            sk->vec[i].coeffs[j] = res[LWE_N * i + j];
+    unsigned int i;
+    uint8_t extseed[CRYPTO_BYTES + 1] = {0};
+    memcpy(extseed, seed, CRYPTO_BYTES);
+
+    for (i = 0; i < MODULE_RANK; ++i) {
+        extseed[CRYPTO_BYTES] = i * MODULE_RANK;
+        hwt(sk->vec[i].coeffs, extseed);
     }
 }
 
