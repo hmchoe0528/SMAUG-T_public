@@ -29,7 +29,7 @@ static void load16_littleendian(uint16_t *out, const int outlen,
  * Name:        rejsampling_mod
  *
  * Description: Sample array of random integers such that res[i] is in the range
- *              [0, LWE_N - i] for 0 < i < LWE_N
+ *              [0, LWE_N - i] for 0 <= i < LWE_N
  *
  * Arguments:   - uint8_t *res: pointer to ouptput polynomial r(x)
  *                (of length LWE), assumed to be already initialized
@@ -85,22 +85,15 @@ void hwt(int16_t *res, const uint8_t *seed) {
 
     rejsampling_mod(si, rand);
 
-    int t0, t1;
-    int c0 = LWE_N - HS, c01 = LWE_N;
+    int16_t t0;
+    int16_t c0 = LWE_N - HS;
     for (i = 0; i < LWE_N; i++) {
-        t0 = (si[i] - c0) >> 31;
-        t1 = (si[i] - c01) >> 31;
-
+        t0 = (si[i] - c0) >> 15;
         c0 += t0;
-        c01 += t1;
-
-        res[i] = 2 + t0 + t1;
-    }
-
-    for (i = 0; i < LWE_N / 4; ++i) {
-        res[4 * i] = (-res[4 * i]) & ((sign[i] & 0x02) - 1);
-        res[4 * i + 1] = (-res[4 * i + 1]) & (((sign[i] >> 1) & 0x02) - 1);
-        res[4 * i + 2] = (-res[4 * i + 2]) & (((sign[i] >> 2) & 0x02) - 1);
-        res[4 * i + 3] = (-res[4 * i + 3]) & (((sign[i] >> 3) & 0x02) - 1);
+        res[i] = 1 + t0;
+        // Convert to ternary
+        // index of sign: (i / 16 / 8) * 16 + (i % 16)
+        // shift size   : (i / 16) % 8
+        res[i] = (-res[i]) & ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x03)) << 1) & 0x02) - 1);
     }
 }
