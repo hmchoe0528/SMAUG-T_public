@@ -19,39 +19,11 @@ static uint32_t load32_littleendian(const uint8_t x[4]) {
     r |= (uint32_t)x[3] << 24;
     return r;
 }
-
-/*************************************************
- * Name:        cbd
- *
- * Description: Given an array of uniformly random bytes, compute
- *              polynomial with coefficients distributed according to
- *              a centered binomial distribution with parameter eta=2
- *
- * Arguments:   - poly *r: pointer to output polynomial
- *              - const uint8_t *buf: pointer to input byte array
- **************************************************/
-static void cbd(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
-    unsigned int i, j;
-    uint32_t t, d;
-    int16_t a, b;
-
-    for (i = 0; i < LWE_N / 8; i++) {
-        t = load32_littleendian(buf + 4 * i);
-        d = t & 0x55555555;
-        d += (t >> 1) & 0x55555555;
-
-        for (j = 0; j < 8; j++) {
-            a = (d >> (4 * j + 0)) & 0x3;
-            b = (d >> (4 * j + 2)) & 0x3;
-            r->coeffs[8 * i + j] = a - b;
-        }
-    }
-}
 #endif
 
 #if SMAUG_MODE == 1
 /*************************************************
- * Name:        mcbd1
+ * Name:        sp_cbd1
  *
  * Description: Given an array of uniformly random bytes, compute
  *              polynomial with coefficients distributed according to
@@ -61,7 +33,7 @@ static void cbd(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
  * Arguments:   - poly *r: pointer to output polynomial
  *              - const uint8_t *buf: pointer to input byte array
  **************************************************/
-static void mcbd1(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
+static void sp_cbd1(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
     unsigned int i, j;
     uint8_t t, s;
     int16_t d;
@@ -77,10 +49,36 @@ static void mcbd1(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
     }
 }
 #endif
+#if SMAUG_MODE == 3
+/*************************************************
+ * Name:        cbd
+ *
+ * Description: Given an array of uniformly random bytes, compute
+ *              polynomial with coefficients distributed according to
+ *              a centered binomial distribution with parameter eta=1
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *buf: pointer to input byte array
+ **************************************************/
+static void cbd(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
+    unsigned int i, j;
+    uint32_t t;
+    int16_t a, b;
 
+    for (i = 0; i < LWE_N / 16; i++) {
+        t = load32_littleendian(buf + 4 * i);
+
+        for (j = 0; j < 16; j++) {
+            a = (t >> (2 * j + 0)) & 0x01;
+            b = (t >> (2 * j + 1)) & 0x01;
+            r->coeffs[16 * i + j] = a - b;
+        }
+    }
+}
+#endif
 #if SMAUG_MODE == 5
 /*************************************************
- * Name:        mcbd2
+ * Name:        sp_cbd2
  *
  * Description: Given an array of uniformly random bytes, compute
  *              polynomial with coefficients distributed according to
@@ -90,7 +88,7 @@ static void mcbd1(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
  * Arguments:   - poly *r: pointer to output polynomial
  *              - const uint8_t *buf: pointer to input byte array
  **************************************************/
-static void mcbd2(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
+static void sp_cbd2(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
     unsigned int i, j;
     uint8_t t, s;
     int16_t d;
@@ -109,10 +107,10 @@ static void mcbd2(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
 
 void poly_cbd(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
 #if SMAUG_MODE == 1
-    mcbd1(r, buf);
+    sp_cbd1(r, buf);
 #elif SMAUG_MODE == 3
     cbd(r, buf);
 #elif SMAUG_MODE == 5
-    mcbd2(r, buf);
+    sp_cbd2(r, buf);
 #endif
 }

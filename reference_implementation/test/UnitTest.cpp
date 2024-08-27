@@ -2,6 +2,7 @@
 #include <string>
 
 extern "C" {
+#include "cbd.h"
 #include "ciphertext.h"
 #include "io.h"
 #include "kem.h"
@@ -132,6 +133,38 @@ void testPacking() {
             ASSERT_TRUE(
                 arrayEq(data1.vec[j].coeffs, data2.vec[j].coeffs, LWE_N));
         }
+    }
+}
+
+static inline int weight(int *plus, int *minus, const int16_t p[LWE_N]) {
+    int zero = 0;
+    for (size_t i = 0; i < LWE_N; i++) {
+        if (p[i] == 1)
+            *plus += 1;
+        else if (p[i] == -1)
+            *minus += 1;
+        else if (p[i] == 0)
+            zero += 1;
+        else
+            return p[i];
+    }
+    return zero;
+}
+
+void testCBD() {
+    const unsigned count = 10000;
+    for (size_t i = 0; i < count; i++) {
+        int plus = 0, minus = 0;
+        uint8_t seed[CRYPTO_BYTES] = {0};
+        uint8_t extseed[CBDSEED_BYTES] = {0};
+        randombytes(seed, CRYPTO_BYTES);
+        shake256(extseed, CBDSEED_BYTES, seed, CRYPTO_BYTES);
+
+        poly r;
+        poly_cbd(&r, extseed);
+
+        int zero = weight(&plus, &minus, r.coeffs);
+        ASSERT_TRUE((zero + plus + minus) == LWE_N);
     }
 }
 
@@ -365,6 +398,8 @@ void testCiphertextEncDec(bool isPKE) {
 }
 
 TEST(General, Packing) { testPacking(); }
+
+TEST(General, CBD) { testCBD(); }
 
 TEST(General, MultOneVector) { testMultOneVector(); }
 

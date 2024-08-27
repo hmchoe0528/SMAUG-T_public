@@ -7,11 +7,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#if SMAUG_MODE == 3
-#define CBDSEED_BYTES ((2 * LWE_N) / 4)
-
-#elif SMAUG_MODE == 1
+#if SMAUG_MODE == 1
 #define CBDSEED_BYTES ((3 * LWE_N) / 8)
+
+#elif SMAUG_MODE == 3
+#define CBDSEED_BYTES ((2 * LWE_N) / 8)
 
 #elif SMAUG_MODE == 5
 #define CBDSEED_BYTES ((4 * LWE_N) / 8)
