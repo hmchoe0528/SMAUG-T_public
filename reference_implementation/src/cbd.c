@@ -1,6 +1,6 @@
 #include "cbd.h"
 
-#if SMAUG_MODE == 3
+#if SMAUG_MODE == 3 || SMAUG_MODE == 5
 /*************************************************
  * Name:        load32_littleendian
  *
@@ -22,6 +22,14 @@ static uint32_t load32_littleendian(const uint8_t x[4]) {
 #endif
 
 #if SMAUG_MODE == 1
+static uint32_t load24_littleendian(const uint8_t x[3]) {
+    uint32_t r;
+    r = (uint32_t)x[0];
+    r |= (uint32_t)x[1] << 8;
+    r |= (uint32_t)x[2] << 16;
+    return r;
+}
+
 /*************************************************
  * Name:        sp_cbd1
  *
@@ -35,21 +43,31 @@ static uint32_t load32_littleendian(const uint8_t x[4]) {
  **************************************************/
 static void sp_cbd1(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
     unsigned int i, j;
-    uint8_t t, s;
-    int16_t d;
+    uint32_t t, d, s;
+    int16_t a;
 
     for (i = 0; i < LWE_N / 8; i++) {
-        t = buf[3 * i] & buf[3 * i + 1];
-        s = buf[3 * i + 2];
+        t = load24_littleendian(buf + 3 * i);
+        d = t & 0x00249249;
+        d &= (t >> 1) & 0x00249249;
+        s = (t >> 2) & 0x00249249;
 
         for (j = 0; j < 8; j++) {
-            d = (t >> j) & 0x01;
-            r->coeffs[8 * i + j] = d * ((((s >> j) << 1) & 0x02) - 1);
+            a = (d >> (3 * j)) & 0x1;
+            r->coeffs[8 * i + j] =
+                a * (((((s >> (3 * j)) & 0x1) - 1) ^ -2) | 1);
         }
     }
 }
 #endif
 #if SMAUG_MODE == 3
+static uint32_t load24_littleendian(const uint8_t x[3]) {
+    uint32_t r;
+    r = (uint32_t)x[0];
+    r |= (uint32_t)x[1] << 8;
+    r |= (uint32_t)x[2] << 16;
+    return r;
+}
 /*************************************************
  * Name:        cbd
  *
@@ -89,17 +107,19 @@ static void cbd(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
  *              - const uint8_t *buf: pointer to input byte array
  **************************************************/
 static void sp_cbd2(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
-    unsigned int i, j;
-    uint8_t t, s;
-    int16_t d;
+     unsigned int i, j;
+    uint32_t t, s, d;
+    int16_t a;
 
     for (i = 0; i < LWE_N / 8; i++) {
-        t = buf[4 * i] & (buf[4 * i + 1] | buf[4 * i + 2]);
-        s = buf[4 * i + 3];
-
+        t = load32_littleendian(buf+4*i);
+        d = t & 0x11111111;
+        d |= (t >> 1) & 0x11111111;
+        d &= (t >> 2) & 0x11111111;
+        s = (t >> 3) & 0x11111111;
         for (j = 0; j < 8; j++) {
-            d = (t >> j) & 0x01;
-            r->coeffs[8 * i + j] = d * ((((s >> j) << 1) & 0x02) - 1);
+            a = (d >> (4 * j)) & 0x1;
+            r->coeffs[8 * i + j] = a * (((((s >> (4 * j)) & 0x1) - 1) ^ -2) | 1);
         }
     }
 }
