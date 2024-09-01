@@ -1,26 +1,5 @@
 #include "cbd.h"
 
-#if SMAUG_MODE == 3 || SMAUG_MODE == 5
-/*************************************************
- * Name:        load32_littleendian
- *
- * Description: load 4 bytes into a 32-bit integer
- *              in little-endian order
- *
- * Arguments:   - const uint8_t *x: pointer to input byte array
- *
- * Returns 32-bit unsigned integer loaded from x
- **************************************************/
-static uint32_t load32_littleendian(const uint8_t x[4]) {
-    uint32_t r;
-    r = (uint32_t)x[0];
-    r |= (uint32_t)x[1] << 8;
-    r |= (uint32_t)x[2] << 16;
-    r |= (uint32_t)x[3] << 24;
-    return r;
-}
-#endif
-
 #if SMAUG_MODE == 1
 static uint32_t load24_littleendian(const uint8_t x[3]) {
     uint32_t r;
@@ -60,14 +39,29 @@ static void sp_cbd1(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
     }
 }
 #endif
-#if SMAUG_MODE == 3
-static uint32_t load24_littleendian(const uint8_t x[3]) {
+
+#if SMAUG_MODE == 3 || SMAUG_MODE == 5
+/*************************************************
+ * Name:        load32_littleendian
+ *
+ * Description: load 4 bytes into a 32-bit integer
+ *              in little-endian order
+ *
+ * Arguments:   - const uint8_t *x: pointer to input byte array
+ *
+ * Returns 32-bit unsigned integer loaded from x
+ **************************************************/
+static uint32_t load32_littleendian(const uint8_t x[4]) {
     uint32_t r;
     r = (uint32_t)x[0];
     r |= (uint32_t)x[1] << 8;
     r |= (uint32_t)x[2] << 16;
+    r |= (uint32_t)x[3] << 24;
     return r;
 }
+#endif
+
+#if SMAUG_MODE == 3
 /*************************************************
  * Name:        cbd
  *
