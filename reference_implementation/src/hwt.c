@@ -94,6 +94,5 @@ void hwt(int16_t *res, const uint8_t *seed) {
         // Convert to ternary
         // index of sign: (i / 16 / 8) * 16 + (i % 16)
         // shift size   : (i / 16) % 8
-        res[i] = (-res[i]) & ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x03)) << 1) & 0x02) - 1);
-    }
+        res[i] = (-res[i]) & ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);    }
 }
