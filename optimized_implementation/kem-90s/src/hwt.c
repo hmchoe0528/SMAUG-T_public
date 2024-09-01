@@ -2,47 +2,100 @@
 #include <stdio.h>
 
 /*************************************************
+ * Name:        load16_littleendian
+ *
+ * Description: load 2 bytes into a 16-bit integer
+ *              in little-endian order
+ *
+ * Arguments:   - uint16_t *out: pointer to output int16_t array
+ *              - int outlen: output length
+ *              - uint8_t *in: pointer to input byte array
+ **************************************************/
+static void load16_littleendian(uint16_t *out, const int outlen,
+                                const uint8_t *in) {
+    int pos = 0;
+    for (int i = 0; i < outlen; ++i) {
+        out[i] = ((uint16_t)(in[pos])) | ((uint16_t)(in[pos + 1]) << 8);
+        pos += 2;
+    }
+}
+
+// referenced
+// Décio Luiz Gazzoni Filho and Tomás S. R. Silva and Julio López
+// “Efficient isochronous fixed-weight sampling with applications to {NTRU},” in
+// Cryptology {ePrint} Archive, Paper 2024/548. 2024,
+// url: eprint.iacr.org/2024/548.
+/*************************************************
+ * Name:        rejsampling_mod
+ *
+ * Description: Sample array of random integers such that res[i] is in the range
+ *              [0, LWE_N - i] for 0 <= i < LWE_N
+ *
+ * Arguments:   - uint8_t *res: pointer to ouptput polynomial r(x)
+ *                (of length LWE), assumed to be already initialized
+ *              - uint8_t *seed: pointer to input seed (of length
+ *input_size)
+ **************************************************/
+static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
+    unsigned int i, j = LWE_N;
+    uint32_t m;
+    uint16_t s, t, l;
+
+    for (i = 0; i < LWE_N; i++) {
+        s = LWE_N - i;
+        t = 65536 % s;
+
+        m = (uint32_t)rand[i] * s;
+        l = m;
+
+        while (l < t) {
+            m = (uint32_t)rand[j++] * s;
+            l = m;
+        }
+
+        res[i] = m >> 16;
+    }
+}
+
+/*************************************************
  * Name:        hwt
  *
  * Description: Hamming weight sampling deterministically to generate sparse
  *              polynomial r(x) from a seed. shake256 is the Extendable-Output
  *              Function from the SHA-3 family.
  *
- * Arguments:   - uint8_t *res: pointer to ouptput polynomial r(x)
+ * Arguments:   - int16_t *res: pointer to ouptput polynomial r(x)
  *                (of length LWE), assumed to be already initialized
- *              - uint8_t *input: pointer to input seed (of length input_size)
- *              - size_t input_size: length of input seed
- *              - uint16_t hmwt: hamming weight to sample
+ *              - uint8_t *seed: pointer to input seed (of length CRYPTO_BYTES)
  **************************************************/
-void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
-         const size_t input_size, const uint16_t hmwt) {
+void hwt(int16_t *res, const uint8_t *seed) {
+    unsigned int i;
+    int16_t si[LWE_N] = {0};
+    uint16_t rand[HWTSEEDBYTES / 2] = {0};
+    uint8_t sign[LWE_N / 4] = {0};
+    uint8_t buf[XOF_BLOCKBYTES * 5] = {0};
 
-    uint32_t pos = 0, div = 0, remain = 0;
-    uint32_t buf[XOF_BLOCKBYTES * 2] = {0};
+    prf(buf, 5 * XOF_BLOCKBYTES, seed, CRYPTO_BYTES + 1);
 
-    uint8_t xof_block = (hmwt == HS) ? HS_XOF : HR_XOF;
-    prf((uint8_t *)buf, xof_block * XOF_BLOCKBYTES, input, input_size);
+    load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
+    memcpy(sign, buf + HWTSEEDBYTES, LWE_N / 4);
 
-    for (int i = 0; i < xof_block * 32; i++) {
-        uint32_t deg = buf[i];
-        remain = 0xffffffff / (DIMENSION - hmwt + pos + 1);
-        div = 0xffffffff - remain * (DIMENSION - hmwt + pos + 1);
-        div++;
-        deg = deg / remain;
-        if (((0xffffffff - div) > deg) && pos < hmwt) {
-            res[DIMENSION - hmwt + pos] = res[deg];
-            res[deg] =
-                ((buf[(xof_block * 32 + (i >> 4))] >> (i & 0x0f)) & 0x02) - 1;
-            pos++;
-        }
-    }
+    rejsampling_mod(si, rand);
 
-    if (pos != hmwt)
-        fprintf(stderr, "hwt sampling error\n");
-
-    size_t cnt_arr_idx = 0;
-    for (int i = 0; i < DIMENSION; ++i) {
-        cnt_arr_idx = ((i & 0x700) >> 8) & (-(res[i] & 0x01));
-        cnt_arr[cnt_arr_idx] += (res[i] & 0x01);
+    int16_t t0;
+    int16_t c0 = LWE_N - HS;
+    for (i = 0; i < LWE_N; i++) {
+        t0 = (si[i] - c0) >> 15;
+        c0 += t0;
+        res[i] = 1 + t0;
+        // Convert to ternary
+        // index of sign: (i / 16 / 8) * 16 + (i % 16)
+        // shift size   : (i / 16) % 8
+        res[i] =
+            (-res[i]) &
+            ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x03))
+               << 1) &
+              0x02) -
+             1);
     }
 }

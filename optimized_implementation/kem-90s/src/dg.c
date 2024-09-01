@@ -1,30 +1,55 @@
 #include "dg.h"
 
+/*************************************************
+ * Name:        load64_littleendian
+ *
+ * Description: load 8 bytes into a 64-bit integer
+ *              in little-endian order
+ *
+ * Arguments:   - uint64_t *out: pointer to output int64_t array
+ *              - int outlen: output length
+ *              - uint8_t *in: pointer to input byte array
+ **************************************************/
+static void load64_littleendian(uint64_t *out, const unsigned int outlen,
+                                const uint8_t *in) {
+    unsigned int i, pos = 0;
+    for (i = 0; i < outlen; ++i) {
+        out[i] =
+            ((uint64_t)(in[pos])) | ((uint64_t)(in[pos + 1]) << 8) |
+            ((uint64_t)(in[pos + 2]) << 16) | ((uint64_t)(in[pos + 3]) << 24) |
+            ((uint64_t)(in[pos + 4]) << 32) | ((uint64_t)(in[pos + 5]) << 40) |
+            ((uint64_t)(in[pos + 6]) << 48) | ((uint64_t)(in[pos + 7]) << 56);
+        pos += 8;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// NOISE DISTRIBUTION ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef NOISE_D1
 #define RAND_BITS 10 // bits for RND + SIGN
+#define SLEN 2
 
 #endif
 
 #ifdef NOISE_D2
 #define RAND_BITS 11 // bits for RND + SIGN
-
+#define SLEN 3
 #endif
 
 #ifdef NOISE_D3
 #define RAND_BITS 12 // bits for RND + SIGN
-
+#define SLEN 3
 #endif
 
 #ifdef NOISE_D4
 #define RAND_BITS 11 // bits for RND + SIGN
-
+#define SLEN 4
 #endif
 
-#define SEED_LEN (RAND_BITS * LWE_N / 64) // 64bit seed length
+#define SEED_LEN (RAND_BITS * LWE_N / 64) // 64-bit seed length
 #define SEED_BYTES (SEED_LEN * sizeof(uint64_t))
+#define NBLOCKS (SEED_BYTES + (AES256CTR_BLOCKBYTES - 1)) / AES256CTR_BLOCKBYTES
 
 // referenced
 // A. Karmakar, S. S. Roy, O. Reparaz, F. Vercauteren and I.
@@ -44,12 +69,13 @@
  *              - uint64_t *seed: pointer to input seed of SEED_LEN)
  **************************************************/
 int addGaussianError(poly *op, uint64_t *seed) {
-    uint16_t j = 0;
+    unsigned int i = 0, j = 0, k = 0;
+    uint64_t s[SLEN] = {0};
+    uint64_t *x = NULL;
 
-    for (size_t i = 0; i < LWE_N; i += 64) {
-        uint64_t *x = seed + j;
+    for (i = 0; i < LWE_N; i += 64) {
+        x = seed + j;
 #ifdef NOISE_D1
-        uint64_t s[2];
         s[0] = (x[0] & x[1] & x[2] & x[3] & x[4] & x[5] & x[7] & ~x[8]) |
                (x[0] & x[3] & x[4] & x[5] & x[6] & x[8]) |
                (x[1] & x[3] & x[4] & x[5] & x[6] & x[8]) |
@@ -59,7 +85,7 @@ int addGaussianError(poly *op, uint64_t *seed) {
                (~x[4] & ~x[6] & x[8]) | (~x[7] & x[8]);
         s[1] = (x[1] & x[2] & x[4] & x[5] & x[7] & x[8]) |
                (x[3] & x[4] & x[5] & x[7] & x[8]) | (x[6] & x[7] & x[8]);
-        for (size_t k = 0; k < 64; ++k) {
+        for (k = 0; k < 64; ++k) {
             op->coeffs[i + k] =
                 ((s[0] >> k) & 0x01) | (((s[1] >> k) & 0x01) << 1);
             uint16_t sign = (x[9] >> k) & 0x01;
@@ -68,7 +94,6 @@ int addGaussianError(poly *op, uint64_t *seed) {
         }
 #endif
 #ifdef NOISE_D2
-        uint64_t s[3];
         s[0] = (x[0] & x[1] & x[2] & x[3] & x[5] & x[7] & x[8]) |
                (x[1] & x[2] & x[3] & x[5] & ~x[6] & x[7] & x[9]) |
                (~x[1] & ~x[2] & ~x[3] & x[6] & x[7] & x[8]) |
@@ -90,7 +115,7 @@ int addGaussianError(poly *op, uint64_t *seed) {
         s[2] = (x[1] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]) |
                (x[2] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]) |
                (x[3] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]);
-        for (size_t k = 0; k < 64; ++k) {
+        for (k = 0; k < 64; ++k) {
             op->coeffs[i + k] = ((s[0] >> k) & 0x01) |
                                 (((s[1] >> k) & 0x01) << 1) |
                                 (((s[2] >> k) & 0x01) << 2);
@@ -100,7 +125,6 @@ int addGaussianError(poly *op, uint64_t *seed) {
         }
 #endif
 #ifdef NOISE_D3
-        uint64_t s[3];
         s[0] = (x[0] & ~x[2] & ~x[3] & x[4] & x[6] & x[7] & x[9]) |
                (x[1] & ~x[2] & ~x[3] & x[4] & x[6] & x[7] & x[9]) |
                (~x[0] & ~x[1] & ~x[3] & x[5] & x[6] & x[7] & x[9]) |
@@ -131,7 +155,7 @@ int addGaussianError(poly *op, uint64_t *seed) {
                (x[3] & x[5] & x[6] & x[8] & x[9] & x[10]) |
                (x[4] & x[5] & x[6] & x[8] & x[9] & x[10]) |
                (x[7] & x[8] & x[9] & x[10]);
-        for (size_t k = 0; k < 64; ++k) {
+        for (k = 0; k < 64; ++k) {
             op->coeffs[i + k] = ((s[0] >> k) & 0x01) |
                                 (((s[1] >> k) & 0x01) << 1) |
                                 (((s[2] >> k) & 0x01) << 2);
@@ -141,8 +165,6 @@ int addGaussianError(poly *op, uint64_t *seed) {
         }
 #endif
 #ifdef NOISE_D4
-        uint64_t s[4];
-
         s[0] = (x[0] & x[1] & ~x[2] & x[3] & x[4] & ~x[6] & x[7] & ~x[9]) |
                (x[2] & x[3] & x[4] & ~x[5] & ~x[6] & x[7] & ~x[9]) |
                (~x[2] & ~x[3] & ~x[4] & ~x[5] & ~x[7] & x[8]) |
@@ -180,7 +202,7 @@ int addGaussianError(poly *op, uint64_t *seed) {
                (~x[6] & x[7] & x[8] & x[9]) | (~x[4] & x[7] & x[8] & x[9]) |
                (~x[2] & x[7] & x[8] & x[9]);
         s[3] = (x[2] & x[3] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]);
-        for (size_t k = 0; k < 64; ++k) {
+        for (k = 0; k < 64; ++k) {
             op->coeffs[i + k] =
                 ((s[0] >> k) & 0x01) | (((s[1] >> k) & 0x01) << 1) |
                 (((s[2] >> k) & 0x01) << 2) | (((s[3] >> k) & 0x01) << 3);
@@ -196,19 +218,19 @@ int addGaussianError(poly *op, uint64_t *seed) {
 }
 
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
-#define NBLOCKS (SEED_BYTES + (AES256CTR_BLOCKBYTES - 1)) / AES256CTR_BLOCKBYTES
-    size_t nonce = 0;
+    unsigned int i;
+    uint8_t nonce = 0;
     ALIGNED_UINT64(SEED_LEN) seed_temp;
     ALIGNED_UINT8(NBLOCKS * AES256CTR_BLOCKBYTES) buf;
 
     aes256ctr_ctx state;
     aes256ctr_init(&state, seed, nonce);
-    for (int i = 0; i < MODULE_RANK; ++i) {
+    for (i = 0; i < MODULE_RANK; ++i) {
         aes256ctr_squeezeblocks(buf.coeffs, NBLOCKS, &state);
         state.n = _mm_loadl_epi64((__m128i *)&nonce);
         nonce += MODULE_RANK;
 
-        cmov((uint8_t *)seed_temp.coeffs, buf.coeffs, SEED_BYTES, 1);
+        load64_littleendian(seed_temp.coeffs, SEED_LEN, buf.coeffs);
         addGaussianError(&(op->vec[i]), seed_temp.coeffs);
     }
 }

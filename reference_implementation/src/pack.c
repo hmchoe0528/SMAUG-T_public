@@ -51,9 +51,9 @@ static void load16_littleendian(int16_t *out, const int outlen,
 void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
     int16_t tmp[LWE_N] = {0};
     int b_idx = 0, d_idx = 0;
+    unsigned int i, j;
 
 #if LOG_Q == 10
-    unsigned int i, j;
     for (i = 0; i < LWE_N; ++i) {
         bytes[i] = data->coeffs[i] >> 8;
         tmp[i] = data->coeffs[i] & 0x00c0;
@@ -76,7 +76,6 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
     store16_littleendian(bytes + LWE_N, buf, DATA_OFFSET * 2);
 #endif
 #if LOG_Q == 11
-    unsigned int i, j;
     for (i = 0; i < LWE_N; ++i) {
         bytes[i] = data->coeffs[i] >> 8;
         tmp[i] = data->coeffs[i] & 0x00e0;
@@ -112,9 +111,9 @@ void Rq_to_bytes(uint8_t bytes[PKPOLY_BYTES], const poly *data) {
 void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
     int16_t tmp[LWE_N] = {0};
     int b_idx = 0, d_idx = 0;
+    unsigned int i, j;
 
 #if LOG_Q == 10
-    unsigned int i, j;
     for (i = 0; i < LWE_N; ++i)
         data->coeffs[i] = (int16_t)bytes[i] << 8;
 
@@ -139,7 +138,6 @@ void bytes_to_Rq(poly *data, const uint8_t bytes[PKPOLY_BYTES]) {
         data->coeffs[i] |= tmp[i] & 0x00c0;
 #endif
 #if LOG_Q == 11
-    unsigned int i, j;
     for (i = 0; i < LWE_N; ++i)
         data->coeffs[i] = (int16_t)bytes[i] << 8;
 

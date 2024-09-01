@@ -28,18 +28,17 @@ void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {
  *
  * Arguments:   - uint16_t *b: pointer to output vector b
  *              - uint16_t *A: pointer to input matrix A
- *              - uint8_t *s_vec: pointer to input vector s
+ *              - uint8_t *s: pointer to input vector s
  *              - uint8_t *e_seed: pointer to input seed of error (of
  *                                     length CRYPTO_BYTES)
  **************************************************/
-void genBx(polyvec *b, const polyvec A[MODULE_RANK],
-           const sppoly s_vec[MODULE_RANK],
+void genBx(polyvec *b, const polyvec A[MODULE_RANK], const polyvec *s,
            const uint8_t e_seed[CRYPTO_BYTES]) {
     // b = e
     addGaussianErrorVec(b, e_seed);
 
     // b = -a * s + e
-    matrix_vec_mult_sub(b, A, s_vec, 0);
+    matrix_vec_mult_sub(b, A, s);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -56,16 +55,13 @@ void genBx(polyvec *b, const polyvec A[MODULE_RANK],
  *                                     length CRYPTO_BYTES)
  **************************************************/
 void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
-    uint8_t res[DIMENSION] = {0};
-    uint8_t cnt_arr[MODULE_RANK] = {0};
+    unsigned int i;
+    uint8_t extseed[CRYPTO_BYTES + 1] = {0};
+    memcpy(extseed, seed, CRYPTO_BYTES);
 
-    hwt(res, cnt_arr, seed, CRYPTO_BYTES, HS);
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        (sk->sp_vec[i]).cnt = cnt_arr[i];
-        (sk->sp_vec[i]).sx = (uint8_t *)calloc(cnt_arr[i], sizeof(uint8_t));
-        (sk->sp_vec[i]).neg_start = convToIdx(
-            (sk->sp_vec[i]).sx, (sk->sp_vec[i]).cnt, res + (i * LWE_N), LWE_N);
+    for (i = 0; i < MODULE_RANK; ++i) {
+        extseed[CRYPTO_BYTES] = i * MODULE_RANK;
+        hwt(sk->vec[i].coeffs, extseed);
     }
 }
 
@@ -86,58 +82,5 @@ void genPubkey(public_key *pk, const secret_key *sk,
 
     memset(&(pk->b), 0, sizeof(uint16_t) * LWE_N);
     // Initialized at addGaussian, Unnecessary
-    genBx(&(pk->b), pk->A, sk->sp_vec, err_seed);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-/*************************************************
- * Name:        checkSanity
- *
- * Description: Check the sanity of the public key or secret key.
- *
- * Arguments:   - public_key *pk: pointer to input public key
- *              - secret_key *sk: pointer to input private key
- *
- * Returns 0(success) or 1(failure).
- **************************************************/
-int checkSanity(const public_key *pk, const secret_key *sk) {
-    for (int i = 0; i < MODULE_RANK; ++i) {
-        for (int j = 0; j < MODULE_RANK; ++j) {
-            for (int k = 0; k < LWE_N; ++k) {
-                if (pk->A[i].vec[j].coeffs[k] & ((1 << _16_LOG_Q) - 1)) {
-                    printf("*** ERROR: pk->A[%d][%d][%d] has an invalid "
-                           "value: "
-                           "%u\n",
-                           i, j, k, (unsigned)pk->A[i].vec[j].coeffs[k]);
-                    return 1;
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < MODULE_RANK; ++i) {
-        for (int j = 0; j < LWE_N; ++j) {
-            if (pk->b.vec[i].coeffs[j] & ((1 << _16_LOG_Q) - 1)) {
-                printf("*** ERROR: pk->b[%d][%d] has an invalid value: "
-                       "%u\n",
-                       i, j, (unsigned)pk->b.vec[i].coeffs[j]);
-                return 1;
-            }
-        }
-    }
-
-    if (sk == NULL)
-        return 0;
-
-    for (int i = 0; i < MODULE_RANK; ++i) {
-        if ((sk->sp_vec[i]).neg_start > HS) {
-            printf("*** ERROR: sk->neg_start[%d] cannot be larger than %d\n", i,
-                   HS);
-            return 1;
-        }
-    }
-
-    return 0;
+    genBx(&(pk->b), pk->A, sk, err_seed);
 }

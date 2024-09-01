@@ -1,4 +1,5 @@
 #include "indcpa.h"
+#include "cbd.h"
 #include "randombytes.h"
 
 /*************************************************
@@ -7,22 +8,16 @@
  * Description: Deterministically generate a vector of sparse polynomial r(x)
  *              from a seed.
  *
- * Arguments:   - uint8_t *r: pointer to ouptput vector r
+ * Arguments:   - polyvec *r: pointer to ouptput vector r
  *              - uint8_t *input: pointer to input seed (of length input_size)
- *              - size_t input_size: length of input seed
- *              - uint8_t * neg_start: pointer to output vector neg_start
  **************************************************/
-void genRx_vec(sppoly r[MODULE_RANK], const uint8_t *input,
-               const size_t input_size) {
-    uint8_t res[DIMENSION] = {0};
-    uint8_t cnt_arr[MODULE_RANK] = {0};
+void genRx_vec(polyvec *r, const uint8_t *input) {
+    unsigned int i;
+    uint8_t buf[CBDSEED_BYTES] = {0};
 
-    hwt(res, cnt_arr, input, input_size, HR);
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        r[i].cnt = cnt_arr[i];
-        r[i].sx = (uint8_t *)calloc(cnt_arr[i], sizeof(uint8_t));
-        r[i].neg_start = convToIdx(r[i].sx, r[i].cnt, res + (i * LWE_N), LWE_N);
+    for (i = 0; i < MODULE_RANK; ++i) {
+        prf(buf, CBDSEED_BYTES, input, i * MODULE_RANK);
+        poly_cbd(&r->vec[i], buf);
     }
 }
 
@@ -57,11 +52,6 @@ void indcpa_keypair(uint8_t pk[PUBLICKEY_BYTES],
     memset(sk, 0, PKE_SECRETKEY_BYTES);
     save_to_string_pk(pk, &pk_tmp);
     save_to_string_sk(sk, &sk_tmp);
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        memset(sk_tmp.sp_vec[i].sx, 0, sk_tmp.sp_vec[i].cnt);
-        free(sk_tmp.sp_vec[i].sx);
-    }
 }
 
 /*************************************************
@@ -87,26 +77,22 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
     load_from_string_pk(&pk_tmp, pk);
 
     // Compute a vector r = hwt(delta, H'(pk))
-    sppoly r[MODULE_RANK];
-    memset(r, 0, sizeof(sppoly) * MODULE_RANK);
+    polyvec r;
+    memset(&r, 0, sizeof(polyvec));
 
     if (seed == NULL)
         randombytes(seed_r, DELTA_BYTES);
     else
         cmov(seed_r, seed, DELTA_BYTES, 1);
-    genRx_vec(r, seed_r, DELTA_BYTES);
+    genRx_vec(&r, seed_r);
 
     // Compute c1(x), c2(x)
     ciphertext ctxt_tmp;
     memset(&ctxt_tmp, 0, sizeof(ciphertext));
-    computeC1(&(ctxt_tmp.c1), pk_tmp.A, r);
-    computeC2(&ctxt_tmp.c2, mu, &pk_tmp.b, r);
+    computeC1(&(ctxt_tmp.c1), pk_tmp.A, &r);
+    computeC2(&(ctxt_tmp.c2), mu, &pk_tmp.b, &r);
 
     save_to_string(ctxt, &ctxt_tmp);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        memset(r[i].sx, 0, r[i].cnt);
-        free(r[i].sx);
-    }
 }
 
 /*************************************************
@@ -135,33 +121,30 @@ void indcpa_dec(uint8_t delta[DELTA_BYTES],
     ciphertext ctxt_tmp;
     load_from_string(&ctxt_tmp, ctxt);
 
+    unsigned int i, j;
     c1_temp = ctxt_tmp.c1;
     delta_temp = ctxt_tmp.c2;
-    for (uint16_t i = 0; i < LWE_N; ++i)
+    for (i = 0; i < LWE_N; ++i)
         delta_temp.coeffs[i] <<= _16_LOG_P2;
-    for (size_t i = 0; i < MODULE_RANK; ++i)
-        for (size_t j = 0; j < LWE_N; ++j)
+    for (i = 0; i < MODULE_RANK; ++i)
+        for (j = 0; j < LWE_N; ++j)
             c1_temp.vec[i].coeffs[j] <<= _16_LOG_P;
 
     // Compute delta = (delta + c1^T * s)
-    vec_vec_mult_add(&delta_temp, &c1_temp, sk_tmp.sp_vec);
+    vec_vec_mult_add(&delta_temp, &c1_temp, &sk_tmp, _16_LOG_P);
 
     // Compute delta = 2/p * delta
-    for (uint16_t i = 0; i < LWE_N; ++i) {
+    for (i = 0; i < LWE_N; ++i) {
         delta_temp.coeffs[i] += DEC_ADD;
         delta_temp.coeffs[i] >>= _16_LOG_T;
+        delta_temp.coeffs[i] &= 0x01;
     }
 
     // Set delta
     memset(delta, 0, DELTA_BYTES);
-    for (size_t i = 0; i < DELTA_BYTES; ++i) {
-        for (uint8_t j = 0; j < 8; ++j) {
+    for (i = 0; i < DELTA_BYTES; ++i) {
+        for (j = 0; j < 8; ++j) {
             delta[i] ^= ((uint8_t)(delta_temp.coeffs[8 * i + j]) << j);
         }
-    }
-
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        memset(sk_tmp.sp_vec[i].sx, 0, sk_tmp.sp_vec[i].cnt);
-        free(sk_tmp.sp_vec[i].sx);
     }
 }

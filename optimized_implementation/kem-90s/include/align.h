@@ -16,6 +16,12 @@
         __m256i vec[(N + 15) / 16];                                            \
     }
 
+#define ALIGNED_INT16(N)                                                       \
+    union {                                                                    \
+        int16_t coeffs[N];                                                     \
+        __m256i vec[(N + 15) / 16];                                            \
+    }
+
 #define ALIGNED_UINT64(N)                                                      \
     union {                                                                    \
         uint64_t coeffs[N];                                                    \

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "align.h"
 #include "parameters.h"
 #include "poly.h"
 #include "verify.h"
@@ -40,8 +41,8 @@ void Rp_vec_to_bytes(uint8_t bytes[CTPOLYVEC_BYTES], const polyvec *data);
 void bytes_to_Rp_vec(polyvec *data, const uint8_t bytes[CTPOLYVEC_BYTES]);
 
 #define Sx_to_bytes SMAUG_NAMESPACE(Sx_to_bytes)
-void Sx_to_bytes(uint8_t *bytes, const uint8_t *data, const uint8_t data_len);
+void Sx_to_bytes(uint8_t *bytes, const poly *data);
 #define bytes_to_Sx SMAUG_NAMESPACE(bytes_to_Sx)
-void bytes_to_Sx(uint8_t *data, const uint8_t *bytes, const uint8_t bytes_len);
+void bytes_to_Sx(poly *data, const uint8_t *bytes);
 
 #endif // SMAUG_PACK_H

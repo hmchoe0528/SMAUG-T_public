@@ -221,10 +221,10 @@ int addGaussianError(poly *op, const uint8_t *seed) {
 
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
     unsigned int i;
-    uint8_t seed_tmp[CRYPTO_BYTES + 1] = {0};
-    cmov(seed_tmp, seed, CRYPTO_BYTES, 1);
+    uint8_t extseed[CRYPTO_BYTES + 1] = {0};
+    memcpy(extseed, seed, CRYPTO_BYTES);
     for (i = 0; i < MODULE_RANK; ++i) {
-        seed_tmp[CRYPTO_BYTES] = MODULE_RANK * i;
-        addGaussianError(&(op->vec[i]), seed_tmp);
+        extseed[CRYPTO_BYTES] = MODULE_RANK * i;
+        addGaussianError(&(op->vec[i]), extseed);
     }
 }
