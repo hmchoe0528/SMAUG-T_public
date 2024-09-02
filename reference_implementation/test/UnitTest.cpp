@@ -2,6 +2,9 @@
 #include <string>
 
 extern "C" {
+#ifdef AVX2
+#include "align.h"
+#endif
 #include "cbd.h"
 #include "ciphertext.h"
 #include "io.h"
@@ -154,14 +157,23 @@ static inline int weight(int *plus, int *minus, const int16_t p[LWE_N]) {
 void testCBD() {
     const unsigned count = 10000;
     for (size_t i = 0; i < count; i++) {
+        poly r;
         int plus = 0, minus = 0;
         uint8_t seed[CRYPTO_BYTES] = {0};
-        uint8_t extseed[CBDSEED_BYTES] = {0};
+#ifdef AVX2
+        ALIGNED_UINT8(CBDSEED_BYTES) extseed;
+#else
+        uint8_t extseed[CBDSEED_BYTES];
+#endif
         randombytes(seed, CRYPTO_BYTES);
-        shake256(extseed, CBDSEED_BYTES, seed, CRYPTO_BYTES);
 
-        poly r;
+#ifdef AVX2
+        shake256(extseed.coeffs, CBDSEED_BYTES, seed, CRYPTO_BYTES);
+        poly_cbd(&r, extseed.CBDSEED_FIELD);
+#else
+        shake256(extseed, CBDSEED_BYTES, seed, CRYPTO_BYTES);
         poly_cbd(&r, extseed);
+#endif
 
         int zero = weight(&plus, &minus, r.coeffs);
         ASSERT_TRUE((zero + plus + minus) == LWE_N);
