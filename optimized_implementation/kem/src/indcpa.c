@@ -1,3 +1,4 @@
+#include "align.h"
 #include "indcpa.h"
 #include "cbd.h"
 #include "randombytes.h"
@@ -13,15 +14,14 @@
  **************************************************/
 void genRx_vec(polyvec *r, const uint8_t *input) {
     unsigned int i;
-    uint8_t buf[CBDSEED_BYTES] = {0};
+    ALIGNED_UINT8(CBDSEED_BYTES) buf;
 
     for (i = 0; i < MODULE_RANK; ++i) {
         uint8_t extseed[DELTA_BYTES + 1];
         memcpy(extseed, input, DELTA_BYTES);
         extseed[DELTA_BYTES] = i;
-
-        shake256(buf, CBDSEED_BYTES, extseed, DELTA_BYTES + 1);
-        poly_cbd(&r->vec[i], buf);
+        shake256(buf.coeffs, CBDSEED_BYTES, extseed, DELTA_BYTES + 1);
+        poly_cbd(&r->vec[i], buf.CBDSEED_FIELD);
     }
 }
 

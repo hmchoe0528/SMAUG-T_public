@@ -156,12 +156,12 @@ void testCBD() {
     for (size_t i = 0; i < count; i++) {
         int plus = 0, minus = 0;
         uint8_t seed[CRYPTO_BYTES] = {0};
-        uint8_t extseed[CBDSEED_BYTES] = {0};
+        ALIGNED_UINT8(CBDSEED_BYTES) extseed;
         randombytes(seed, CRYPTO_BYTES);
-        prf(extseed, CBDSEED_BYTES, seed, 0);
+        prf(extseed.coeffs, CBDSEED_BYTES, seed, 0);
 
         poly r;
-        poly_cbd(&r, extseed);
+        poly_cbd(&r, extseed.CBDSEED_FIELD);
 
         int zero = weight(&plus, &minus, r.coeffs);
         ASSERT_TRUE((zero + plus + minus) == LWE_N);

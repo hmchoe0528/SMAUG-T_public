@@ -202,12 +202,12 @@ static void sp_cbd2(poly *r, const __m256i buf[CBDSEED_BYTES/32]) {
 }
 #endif
 
-void poly_cbd(poly *r, const uint8_t buf[CBDSEED_BYTES]) {
+void poly_cbd(poly *r, const CBDSEED_TYPE buf[CBDSEED_LEN]) {
 #if SMAUG_MODE == 1
     sp_cbd1(r, buf);
 #elif SMAUG_MODE == 3
     cbd(r, buf);
 #elif SMAUG_MODE == 5
-    sp_cbd2(r, (__m256i*)buf);
+    sp_cbd2(r, buf);
 #endif
 }
