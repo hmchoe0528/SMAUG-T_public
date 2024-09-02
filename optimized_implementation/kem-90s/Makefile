@@ -4,6 +4,9 @@ MAINDIR := test
 BENCHDIR := benchmark
 KATDIR := kat
 
+NTTINCDIR := $(INCDIR)/mul
+NTTSRCDIR := $(SRCDIR)/mul
+
 # CC = clang
 CC ?= /usr/bin/cc
 RM = /bin/rm
@@ -13,12 +16,15 @@ CFLAGS = -march=native -mtune=native -O3 -fomit-frame-pointer -mavx2 -mbmi2 -mpo
 CFLAGS90S = $(CFLAGS) -maes
 DFLAGS = -g3 -DDEBUG
 
-SOURCES = $(SRCDIR)/ciphertext.c $(SRCDIR)/dg.c $(SRCDIR)/hwt.c $(SRCDIR)/indcpa.c $(SRCDIR)/io.c $(SRCDIR)/kem.c $(SRCDIR)/key.c $(SRCDIR)/pack.c $(SRCDIR)/poly.c $(SRCDIR)/verify.c $(SRCDIR)/toomcook.c $(SRCDIR)/cbd.c
+NTTSOURCES = $(NTTSRCDIR)/ntt.c $(NTTSRCDIR)/ntt.S $(NTTSRCDIR)/invntt.S $(NTTSRCDIR)/basemul.S $(NTTSRCDIR)/consts7681.c $(NTTSRCDIR)/consts10753.c
+NTTHEADERS = $(NTTINCDIR)/config.h $(NTTINCDIR)/ntt.h $(NTTINCDIR)/consts.h $(NTTINCDIR)/fq.inc $(NTTINCDIR)/shuffle.inc
+
+SOURCES = $(SRCDIR)/ciphertext.c $(SRCDIR)/dg.c $(SRCDIR)/hwt.c $(SRCDIR)/indcpa.c $(SRCDIR)/io.c $(SRCDIR)/kem.c $(SRCDIR)/key.c $(SRCDIR)/pack.c $(SRCDIR)/poly.c $(SRCDIR)/verify.c $(SRCDIR)/cbd.c $(NTTSOURCES)
 SOURCES90S = $(SOURCES) $(SRCDIR)/symmetric.c $(SRCDIR)/aes256ctr.c
 
-HEADERS = $(INCDIR)/ciphertext.h $(INCDIR)/dg.h $(INCDIR)/hwt.h $(INCDIR)/indcpa.h $(INCDIR)/io.h $(INCDIR)/kem.h $(INCDIR)/key.h $(INCDIR)/pack.h $(INCDIR)/poly.h $(INCDIR)/verify.h $(INCDIR)/toomcook.h $(INCDIR)/cbd.h $(INCDIR)/symmetric.h 
+HEADERS = $(INCDIR)/ciphertext.h $(INCDIR)/dg.h $(INCDIR)/hwt.h $(INCDIR)/indcpa.h $(INCDIR)/io.h $(INCDIR)/kem.h $(INCDIR)/key.h $(INCDIR)/pack.h $(INCDIR)/poly.h $(INCDIR)/verify.h $(INCDIR)/cbd.h $(INCDIR)/symmetric.h $(NTTHEADERS) 
 HEADERS90S = $(HEADERS) $(INCDIR)/sha2.h $(INCDIR)/aes256ctr.h
-INCLUDE = -I./$(INCDIR)
+INCLUDE = -I./$(INCDIR) -I./$(NTTINCDIR)
 
 SOURCES_MAIN = $(SOURCESKECCAK) $(MAINDIR)/main.c $(SRCDIR)/randombytes.c
 SOURCES_KAT = $(SOURCESKECCAK) $(KATDIR)/kat_kem.c $(KATDIR)/PQCgenKAT_kem.c $(SRCDIR)/rng.c

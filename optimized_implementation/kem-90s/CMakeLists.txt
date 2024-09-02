@@ -32,13 +32,20 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/io.c
     ${PROJECT_SOURCE_DIR}/src/indcpa.c
     ${PROJECT_SOURCE_DIR}/src/verify.c
-    ${PROJECT_SOURCE_DIR}/src/toomcook.c
     ${PROJECT_SOURCE_DIR}/src/cbd.c
 )
 
 set(SRCS_RNG
     ${PROJECT_SOURCE_DIR}/src/randombytes.c)
 
+set(SRCS_NTT
+    ${PROJECT_SOURCE_DIR}/src/mul/basemul.S
+    ${PROJECT_SOURCE_DIR}/src/mul/consts7681.c
+    ${PROJECT_SOURCE_DIR}/src/mul/consts10753.c
+    ${PROJECT_SOURCE_DIR}/src/mul/invntt.S
+    ${PROJECT_SOURCE_DIR}/src/mul/ntt.S
+    ${PROJECT_SOURCE_DIR}/src/mul/ntt.c
+) 
 
 if(MSVC)
   set(C_FLAGS /nologo /O2 /W4 /wd4146 /wd4244)
@@ -49,6 +56,7 @@ endif()
 find_package(OpenSSL REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include/mul)
 
 set(LIB_RNG RNG)
 add_library(${LIB_RNG} SHARED ${SRCS_RNG})
@@ -97,7 +105,7 @@ if(ENABLE_CPPCHECK)
 endif()
 
 
-set(SRCS_90S ${SRCS}
+set(SRCS_90S ${SRCS} ${SRCS_NTT}
   ${PROJECT_SOURCE_DIR}/src/aes256ctr.c
   ${PROJECT_SOURCE_DIR}/src/symmetric.c
 )

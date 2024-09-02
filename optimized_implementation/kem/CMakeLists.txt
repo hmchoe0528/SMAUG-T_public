@@ -33,7 +33,6 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/indcpa.c
     ${PROJECT_SOURCE_DIR}/src/hash.c
     ${PROJECT_SOURCE_DIR}/src/verify.c
-    ${PROJECT_SOURCE_DIR}/src/toomcook.c
     ${PROJECT_SOURCE_DIR}/src/cbd.c
 )
 
@@ -47,6 +46,15 @@ set(SRCS_FIPS202
     ${PROJECT_SOURCE_DIR}/src/fips202.c
 )
 
+set(SRCS_NTT
+    ${PROJECT_SOURCE_DIR}/src/mul/basemul.S
+    ${PROJECT_SOURCE_DIR}/src/mul/consts7681.c
+    ${PROJECT_SOURCE_DIR}/src/mul/consts10753.c
+    ${PROJECT_SOURCE_DIR}/src/mul/invntt.S
+    ${PROJECT_SOURCE_DIR}/src/mul/ntt.S
+    ${PROJECT_SOURCE_DIR}/src/mul/ntt.c
+)
+
 
 if(MSVC)
   set(C_FLAGS /nologo /O2 /W4 /wd4146 /wd4244)
@@ -58,6 +66,7 @@ find_package(OpenSSL REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/keccak)
+include_directories(${PROJECT_SOURCE_DIR}/include/mul)
 
 set(LIB_RNG RNG)
 add_library(${LIB_RNG} SHARED ${SRCS_RNG})
@@ -109,6 +118,8 @@ if(ENABLE_CPPCHECK)
   endif()
 endif()
 
+
+set(SRCS ${SRCS} ${SRCS_NTT})
 
 set(LIB_NAME1 ${PROJECT_NAME}1)
 add_library(${LIB_NAME1} SHARED ${SRCS})
