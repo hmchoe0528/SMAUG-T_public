@@ -1,3 +1,4 @@
+#include "align.h"
 #include "hwt.h"
 #include <immintrin.h>
 #include <stdio.h>
@@ -78,9 +79,9 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
     int16_t k;
     uint32_t m;
     uint16_t l;
-    uint16_t vec[16]__attribute__((aligned(32)));
 
-    __m256i sv = _mm256_set_epi16(LWE_N-15, LWE_N-14, LWE_N-13, LWE_N-12,
+    ALIGNED_INT16(16) sv;
+    sv.vec[0] = _mm256_set_epi16(LWE_N-15, LWE_N-14, LWE_N-13, LWE_N-12,
                                  LWE_N-11, LWE_N-10, LWE_N-9, LWE_N-8,
                                  LWE_N-7, LWE_N-6, LWE_N-5, LWE_N-4,
                                  LWE_N-3, LWE_N-2, LWE_N-1, LWE_N);
@@ -94,21 +95,18 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         randv = _mm256_load_si256((__m256i*)&rand[i]);
         tv = _mm256_load_si256((__m256i*)&T_REJ[i]);
 
-        rv = _mm256_mulhi_epu16(randv, sv);
-        lv = _mm256_mullo_epi16(randv, sv);
+        rv = _mm256_mulhi_epu16(randv, sv.vec[0]);
+        lv = _mm256_mullo_epi16(randv, sv.vec[0]);
 
         uint32_t mask1 = _mm256_movemask_epi8(_mm256_cmpgt_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(tv)), _mm256_cvtepu16_epi32(_mm256_castsi256_si128(lv))));
         uint32_t mask2 = _mm256_movemask_epi8(_mm256_cmpgt_epi32(_mm256_cvtepu16_epi32(_mm256_extracti128_si256(tv, 1)), _mm256_cvtepu16_epi32(_mm256_extracti128_si256(lv, 1))));
 
-        if (!mask1 || !mask2) {
-            _mm256_store_si256((__m256i*)vec, sv);
-        }
         _mm256_store_si256((__m256i*)&res[i], rv);
 
         while (mask1 != 0) {
             k = __builtin_ctz(mask1) / 4;
             do {
-                m = (uint32_t)rand[j] * vec[k];
+                m = (uint32_t)rand[j] *= sv.coeffs[k];
                 j++;
                 l = m;
             } while (l < T_REJ[i + k]);
@@ -119,14 +117,14 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         while (mask2 != 0) {
             k = __builtin_ctz(mask2) / 4;
             do {
-                m = (uint32_t)rand[j] * vec[8 + k];
+                m = (uint32_t)rand[j] * sv.coeffs[8 + k];
                 j++;
                 l = m;
             } while (l < T_REJ[i + 8 + k]);
             res[i + 8 + k] = m >> 16;
             mask2 ^= 0xf << (4 * k);
         }
-        sv = _mm256_sub_epi16(sv, delta);
+        sv.vec[0] = _mm256_sub_epi16(sv.vec[0], delta);
     }
 }
 
@@ -143,26 +141,26 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
  **************************************************/
 void hwt(int16_t *res, const uint8_t *seed) {
     unsigned int i;
-    int16_t si[LWE_N] = {0};
-    uint16_t rand[HWTSEEDBYTES / 2] = {0};
-    uint8_t sign[LWE_N / 4] = {0};
-    uint8_t buf[SHAKE256_RATE * 5] = {0};
+    ALIGNED_INT16(LWE_N) si;
+    ALIGNED_UINT16(HWTSEEDBYTES / 2) rand;
+    ALIGNED_UINT8(LWE_N / 4) sign;
+    ALIGNED_UINT8(SHAKE256_RATE * 5) buf;
 
-    shake256(buf, 5 * SHAKE256_RATE, seed, CRYPTO_BYTES + 1);
+    shake256(buf.coeffs, 5 * SHAKE256_RATE, seed, CRYPTO_BYTES + 1);
 
-    load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
-    memcpy(sign, buf + HWTSEEDBYTES, LWE_N / 4);
+    load16_littleendian(rand.coeffs, HWTSEEDBYTES / 2, buf.coeffs);;
+    memcpy(sign.coeffs, buf.coeffs + HWTSEEDBYTES, LWE_N / 4);
 
-    rejsampling_mod(si, rand);
+    rejsampling_mod(si.coeffs, rand.coeffs);
 
     int16_t t0;
     int16_t c0 = LWE_N - HS;
     for (i = 0; i < LWE_N; i++) {
-        t0 = (si[i] - c0) >> 15;
+        t0 = (si.coeffs[i] - c0) >> 15;
         c0 += t0;
         res[i] = 1 + t0;
         // Convert to ternary
         // index of sign: (i / 16 / 8) * 16 + (i % 16)
         // shift size   : (i / 16) % 8
-        res[i] = (-res[i]) & ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);    }
+        res[i] = (-res[i]) & ((((sign.coeffs[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);    }
 }

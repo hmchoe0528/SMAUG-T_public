@@ -2,7 +2,6 @@
 #include <string>
 
 extern "C" {
-#include "align.h"
 #include "cbd.h"
 #include "ciphertext.h"
 #include "io.h"
@@ -157,12 +156,12 @@ void testCBD() {
     for (size_t i = 0; i < count; i++) {
         int plus = 0, minus = 0;
         uint8_t seed[CRYPTO_BYTES] = {0};
-        ALIGNED_UINT8(CBDSEED_BYTES) extseed;
+        uint8_t extseed[CBDSEED_BYTES] = {0};
         randombytes(seed, CRYPTO_BYTES);
-        shake256(extseed.coeffs, CBDSEED_BYTES, seed, CRYPTO_BYTES);
+        shake256(extseed, CBDSEED_BYTES, seed, CRYPTO_BYTES);
 
         poly r;
-        poly_cbd(&r, extseed.CBDSEED_FIELD);
+        poly_cbd(&r, extseed);
 
         int zero = weight(&plus, &minus, r.coeffs);
         ASSERT_TRUE((zero + plus + minus) == LWE_N);
