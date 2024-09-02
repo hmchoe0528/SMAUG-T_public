@@ -13,11 +13,11 @@
  **************************************************/
 void genRx_vec(polyvec *r, const uint8_t *input) {
     unsigned int i;
-    uint8_t buf[CBDSEED_BYTES] = {0};
+    ALIGNED_UINT8(CBDSEED_BYTES) buf;
 
     for (i = 0; i < MODULE_RANK; ++i) {
-        prf(buf, CBDSEED_BYTES, input, i * MODULE_RANK);
-        poly_cbd(&r->vec[i], buf);
+        prf(buf.coeffs, CBDSEED_BYTES, input, i * MODULE_RANK);
+        poly_cbd(&r->vec[i], buf.CBDSEED_FIELD);
     }
 }
 
