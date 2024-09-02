@@ -106,7 +106,7 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         while (mask1 != 0) {
             k = __builtin_ctz(mask1) / 4;
             do {
-                m = (uint32_t)rand[j] *= sv.coeffs[k];
+                m = (uint32_t)rand[j] * sv.coeffs[k];
                 j++;
                 l = m;
             } while (l < T_REJ[i + k]);
