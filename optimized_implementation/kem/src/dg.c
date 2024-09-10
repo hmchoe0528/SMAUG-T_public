@@ -217,6 +217,8 @@ void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
     ALIGNED_UINT8(SEED_LEN * 8) buf[4];
     ALIGNED_UINT64(SEED_LEN) seed_temp[4];
 
+    memset(extseed, 0, sizeof(extseed));
+
     __m256i f;
     f = _mm256_loadu_si256((__m256i *)seed);
 
