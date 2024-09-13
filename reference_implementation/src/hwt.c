@@ -36,7 +36,7 @@ static void load16_littleendian(uint16_t *out, const int outlen,
  *              - uint8_t *seed: pointer to input seed (of length
  *input_size)
  **************************************************/
-static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
+static int rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
     unsigned int i, j = LWE_N;
     uint32_t m;
     uint16_t s, t, l;
@@ -49,12 +49,16 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         l = m;
 
         while (l < t) {
+            if (j >= (HWTSEEDBYTES / 2))
+                return -1; // all randomness used
             m = (uint32_t)rand[j++] * s;
             l = m;
         }
 
         res[i] = m >> 16;
     }
+
+    return 0;
 }
 
 /*************************************************
@@ -78,12 +82,14 @@ void hwt(int16_t *res, const uint8_t *seed) {
     keccak_state state;
     shake256_init(&state);
     shake256_absorb_once(&state, seed, CRYPTO_BYTES + 1);
-    shake256_squeezeblocks(buf, 5, &state);
 
-    load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
+    // only executed once with overwhelming probability:
+    do {
+        shake256_squeezeblocks(buf, 5, &state);
+        load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
+    } while (rejsampling_mod(si, rand));
+
     memcpy(sign, buf + HWTSEEDBYTES, LWE_N / 4);
-
-    rejsampling_mod(si, rand);
 
     int16_t t0;
     int16_t c0 = LWE_N - HS;
@@ -94,5 +100,8 @@ void hwt(int16_t *res, const uint8_t *seed) {
         // Convert to ternary
         // index of sign: (i / 16 / 8) * 16 + (i % 16)
         // shift size   : (i / 16) % 8
-        res[i] = (-res[i]) & ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);    }
+        res[i] =
+            (-res[i]) &
+            ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);
+    }
 }
