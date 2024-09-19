@@ -14,10 +14,154 @@
  *              - uint8_t *seed: pointer to input seed (of length
  *                                     PKSEED_BYTES)
  **************************************************/
-void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {
-    uint8_t buf[PKPOLYMAT_BYTES] = {0};
-    shake128(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
-    bytes_to_Rq_mat(A, buf);
+void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {  
+    ALIGNED_UINT8(((PKPOLY_BYTES+SHAKE128_RATE-1)/SHAKE128_RATE)*SHAKE128_RATE) buf[4];
+    __m256i f = _mm256_loadu_si256((__m256i *)seed);
+
+#if MODULE_RANK == 2
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 0;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 0;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 1;
+    buf[2].coeffs[33] = 0;
+    buf[3].coeffs[32] = 1;
+    buf[3].coeffs[33] = 1;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[0].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[0].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[1].vec[0], buf[2].coeffs);
+    bytes_to_Rq(&A[1].vec[1], buf[3].coeffs);
+
+
+
+
+#elif MODULE_RANK == 3
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 0;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 0;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 1;
+    buf[2].coeffs[33] = 0;
+    buf[3].coeffs[32] = 1;
+    buf[3].coeffs[33] = 1;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[0].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[0].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[1].vec[0], buf[2].coeffs);
+    bytes_to_Rq(&A[1].vec[1], buf[3].coeffs);
+
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 2;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 2;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 0;
+    buf[2].coeffs[33] = 2;
+    buf[3].coeffs[32] = 1;
+    buf[3].coeffs[33] = 2;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[2].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[2].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[0].vec[2], buf[2].coeffs);
+    bytes_to_Rq(&A[1].vec[2], buf[3].coeffs);
+
+    
+    _mm256_store_si256(buf[0].vec, f);
+    buf[0].coeffs[32] = 2;
+    buf[0].coeffs[33] = 2;
+    shake128(buf[0].coeffs, PKPOLY_BYTES, buf[0].coeffs, 34);
+    bytes_to_Rq(&A[2].vec[2], buf[0].coeffs);
+
+
+
+
+#elif MODULE_RANK == 4
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 0;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 0;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 0;
+    buf[2].coeffs[33] = 2;
+    buf[3].coeffs[32] = 0;
+    buf[3].coeffs[33] = 3;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[0].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[0].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[0].vec[2], buf[2].coeffs);
+    bytes_to_Rq(&A[0].vec[3], buf[3].coeffs);
+
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 1;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 1;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 1;
+    buf[2].coeffs[33] = 2;
+    buf[3].coeffs[32] = 1;
+    buf[3].coeffs[33] = 3;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[1].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[1].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[1].vec[2], buf[2].coeffs);
+    bytes_to_Rq(&A[1].vec[3], buf[3].coeffs);
+
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 2;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 2;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 2;
+    buf[2].coeffs[33] = 2;
+    buf[3].coeffs[32] = 2;
+    buf[3].coeffs[33] = 3;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[2].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[2].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[2].vec[2], buf[2].coeffs);
+    bytes_to_Rq(&A[2].vec[3], buf[3].coeffs);
+
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 3;
+    buf[0].coeffs[33] = 0;
+    buf[1].coeffs[32] = 3;
+    buf[1].coeffs[33] = 1;
+    buf[2].coeffs[32] = 3;
+    buf[2].coeffs[33] = 2;
+    buf[3].coeffs[32] = 3;
+    buf[3].coeffs[33] = 3;
+    shake128x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, PKPOLY_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, 34);
+    bytes_to_Rq(&A[3].vec[0], buf[0].coeffs);
+    bytes_to_Rq(&A[3].vec[1], buf[1].coeffs);
+    bytes_to_Rq(&A[3].vec[2], buf[2].coeffs);
+    bytes_to_Rq(&A[3].vec[3], buf[3].coeffs);
+#else
+#error "This implementation works only for MODULE_RANK in {2,3,4}."
+#endif
 }
 
 /*************************************************
@@ -55,14 +199,32 @@ void genBx(polyvec *b, const polyvec A[MODULE_RANK], const polyvec *s,
  *                                     length CRYPTO_BYTES)
  **************************************************/
 void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
-    unsigned int i;
-    uint8_t extseed[CRYPTO_BYTES + 1] = {0};
-    memcpy(extseed, seed, CRYPTO_BYTES);
-
-    for (i = 0; i < MODULE_RANK; ++i) {
-        extseed[CRYPTO_BYTES] = i * MODULE_RANK;
-        hwt(sk->vec[i].coeffs, extseed);
-    }
+//    unsigned int i;
+//    ALIGNED_UINT8(5 * SHAKE256_RATE) buf[4] = {0};
+//
+//#if MODULE_RANK > 4
+//#error "This function assumes MODULE_RANK <= 4."
+//#endif
+//#if CRYPTO_BYTES != 32
+//#error "This function assumes CRYPTO_BYTES == 32."
+//#endif
+//
+//    __m256i f = _mm256_loadu_si256((__m256i*)seed);
+//    _mm256_store_si256(buf[0].vec, f);
+//    _mm256_store_si256(buf[1].vec, f);
+//    _mm256_store_si256(buf[2].vec, f);
+//    _mm256_store_si256(buf[3].vec, f);
+//    buf[0].coeffs[32] = 0;
+//    buf[1].coeffs[32] = MODULE_RANK * 1;
+//    buf[2].coeffs[32] = MODULE_RANK * 2;
+//    buf[3].coeffs[32] = MODULE_RANK * 3;
+//
+//    shake256x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, HWTSEEDBYTES + LWE_N/4, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, CRYPTO_BYTES + 1);
+//
+//    for (i = 0; i < MODULE_RANK; ++i) {
+//        hwt(sk->vec[i].coeffs, buf[i].coeffs);
+//    }
+    hwt(sk, seed);
 }
 
 /*************************************************

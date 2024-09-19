@@ -15,9 +15,18 @@
  *                                     PKSEED_BYTES)
  **************************************************/
 void genAx(polyvec A[MODULE_RANK], const uint8_t seed[PKSEED_BYTES]) {
-    uint8_t buf[PKPOLYMAT_BYTES] = {0};
-    shake128(buf, PKPOLYMAT_BYTES, seed, PKSEED_BYTES);
-    bytes_to_Rq_mat(A, buf);
+    uint8_t buf[PKPOLY_BYTES] = {0}, tmpseed[PKSEED_BYTES+2];
+    memcpy(tmpseed, seed, PKSEED_BYTES);
+    for (unsigned i = 0; i < MODULE_RANK; i++)
+    {
+        for (unsigned j = 0; j < MODULE_RANK; j++)
+        {
+            tmpseed[32] = i;
+            tmpseed[33] = j;
+            shake128(buf, PKPOLY_BYTES, tmpseed, PKSEED_BYTES + 2);
+            bytes_to_Rq(&A[i].vec[j], buf);
+        }
+    }
 }
 
 /*************************************************

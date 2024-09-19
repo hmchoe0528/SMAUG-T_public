@@ -77,7 +77,7 @@ void hwt(int16_t *res, const uint8_t *seed) {
     int16_t si[LWE_N] = {0};
     uint16_t rand[HWTSEEDBYTES / 2] = {0};
     uint8_t sign[LWE_N / 4] = {0};
-    uint8_t buf[SHAKE256_RATE * 5] = {0};
+    uint8_t buf[HWTSEEDBYTES] = {0};
 
     keccak_state state;
     shake256_init(&state);
@@ -85,11 +85,11 @@ void hwt(int16_t *res, const uint8_t *seed) {
 
     // only executed once with overwhelming probability:
     do {
-        shake256_squeezeblocks(buf, 5, &state);
+        shake256_squeeze(buf, HWTSEEDBYTES, &state);
         load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
     } while (rejsampling_mod(si, rand));
 
-    memcpy(sign, buf + HWTSEEDBYTES, LWE_N / 4);
+    shake256_squeeze(sign, LWE_N / 4, &state);
 
     int16_t t0;
     int16_t c0 = LWE_N - HS;

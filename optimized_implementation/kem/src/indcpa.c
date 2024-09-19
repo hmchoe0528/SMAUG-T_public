@@ -14,14 +14,26 @@
  **************************************************/
 void genRx_vec(polyvec *r, const uint8_t *input) {
     unsigned int i;
-    ALIGNED_UINT8(CBDSEED_BYTES) buf;
+    ALIGNED_UINT8(CBDSEED_BYTES) buf[4];
 
+    __m256i f = _mm256_loadu_si256((__m256i *)input);
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 0;
+    buf[1].coeffs[32] = 1;
+    buf[2].coeffs[32] = 2;
+    buf[3].coeffs[32] = 3;
+#if DELTA_BYTES != 32
+#error "This function assumes DELTA_BYTES to be 32."
+#endif
+    shake256x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, CBDSEED_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, DELTA_BYTES + 1);
+#if MODULE_RANK > 4
+#error "This function works only up to MODULE_RANK = 4."
+#endif
     for (i = 0; i < MODULE_RANK; ++i) {
-        uint8_t extseed[DELTA_BYTES + 1];
-        memcpy(extseed, input, DELTA_BYTES);
-        extseed[DELTA_BYTES] = i;
-        shake256(buf.coeffs, CBDSEED_BYTES, extseed, DELTA_BYTES + 1);
-        poly_cbd(&r->vec[i], buf.CBDSEED_FIELD);
+        poly_cbd(&r->vec[i], buf[i].CBDSEED_FIELD);
     }
 }
 

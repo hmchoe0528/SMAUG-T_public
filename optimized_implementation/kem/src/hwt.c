@@ -2,6 +2,7 @@
 #include "hwt.h"
 #include <immintrin.h>
 #include <stdio.h>
+#include "fips202x4.h"
 
 #define TARR(i) [i] = 65536 % (LWE_N - i)
 
@@ -74,7 +75,7 @@ static void load16_littleendian(uint16_t *out, const int outlen,
  *              - uint8_t *seed: pointer to input seed (of length
  *input_size)
  **************************************************/
-static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
+static int rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
     int16_t i, j = LWE_N;
     int16_t k;
     uint32_t m;
@@ -106,6 +107,10 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         while (mask1 != 0) {
             k = __builtin_ctz(mask1) / 4;
             do {
+                if (j >= (HWTSEEDBYTES/2))
+                {
+                    return -1;
+                }
                 m = (uint32_t)rand[j] * sv.coeffs[k];
                 j++;
                 l = m;
@@ -117,6 +122,10 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         while (mask2 != 0) {
             k = __builtin_ctz(mask2) / 4;
             do {
+                if (j >= (HWTSEEDBYTES/2))
+                {
+                    return -1;
+                }
                 m = (uint32_t)rand[j] * sv.coeffs[8 + k];
                 j++;
                 l = m;
@@ -126,6 +135,7 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
         }
         sv.vec[0] = _mm256_sub_epi16(sv.vec[0], delta);
     }
+    return 0;
 }
 
 /*************************************************
@@ -135,32 +145,95 @@ static void rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
  *              polynomial r(x) from a seed. shake256 is the Extendable-Output
  *              Function from the SHA-3 family.
  *
- * Arguments:   - int16_t *res: pointer to ouptput polynomial r(x)
- *                (of length LWE), assumed to be already initialized
+ * Arguments:   - polyvec *r: pointer to ouptput polynomial vector r(x)
+ *                assumed to be already initialized
  *              - uint8_t *seed: pointer to input seed (of length CRYPTO_BYTES)
  **************************************************/
-void hwt(int16_t *res, const uint8_t *seed) {
-    unsigned int i;
-    ALIGNED_INT16(LWE_N) si;
-    ALIGNED_UINT16(HWTSEEDBYTES / 2) rand;
-    ALIGNED_UINT8(LWE_N / 4) sign;
-    ALIGNED_UINT8(SHAKE256_RATE * 5) buf;
+ #define HWTSHAKEBLOCKS ((HWTSEEDBYTES + LWE_N/4 + SHAKE256_RATE - 1) / SHAKE256_RATE)
+ #define HWTSHAKEBUFSIZE (((HWTSEEDBYTES*2 + LWE_N/4 + SHAKE256_RATE - 1) / SHAKE256_RATE) * SHAKE256_RATE)
+void hwt(polyvec *r, const uint8_t seed[CRYPTO_BYTES]) {
 
-    shake256(buf.coeffs, 5 * SHAKE256_RATE, seed, CRYPTO_BYTES + 1);
+    unsigned int i, j;
+    ALIGNED_UINT8(HWTSHAKEBUFSIZE) buf[4] = {0};
+    ALIGNED_INT16(LWE_N) si[MODULE_RANK];
+    ALIGNED_UINT16(HWTSEEDBYTES / 2) rand[MODULE_RANK];
+    ALIGNED_UINT8(LWE_N / 4) sign[MODULE_RANK];
+    keccakx4_state state;
 
-    load16_littleendian(rand.coeffs, HWTSEEDBYTES / 2, buf.coeffs);;
-    memcpy(sign.coeffs, buf.coeffs + HWTSEEDBYTES, LWE_N / 4);
+#if MODULE_RANK > 4
+#error "This function assumes MODULE_RANK <= 4."
+#endif
+#if CRYPTO_BYTES != 32
+#error "This function assumes CRYPTO_BYTES == 32."
+#endif
 
-    rejsampling_mod(si.coeffs, rand.coeffs);
+    __m256i f = _mm256_loadu_si256((__m256i*)seed);
+    _mm256_store_si256(buf[0].vec, f);
+    _mm256_store_si256(buf[1].vec, f);
+    _mm256_store_si256(buf[2].vec, f);
+    _mm256_store_si256(buf[3].vec, f);
+    buf[0].coeffs[32] = 0;
+    buf[1].coeffs[32] = MODULE_RANK * 1;
+    buf[2].coeffs[32] = MODULE_RANK * 2;
+    buf[3].coeffs[32] = MODULE_RANK * 3;
 
-    int16_t t0;
-    int16_t c0 = LWE_N - HS;
-    for (i = 0; i < LWE_N; i++) {
-        t0 = (si.coeffs[i] - c0) >> 15;
-        c0 += t0;
-        res[i] = 1 + t0;
-        // Convert to ternary
-        // index of sign: (i / 16 / 8) * 16 + (i % 16)
-        // shift size   : (i / 16) % 8
-        res[i] = (-res[i]) & ((((sign.coeffs[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);    }
+    shake256x4_absorb_once(&state, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, CRYPTO_BYTES + 1);
+    uint8_t doneflags = 0;
+    shake256x4_squeezeblocks(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, HWTSHAKEBLOCKS, &state);
+
+    for (i = 0; i < MODULE_RANK; ++i) {
+        load16_littleendian(rand[i].coeffs, HWTSEEDBYTES / 2, buf[i].coeffs);
+        if (rejsampling_mod(si[i].coeffs, rand[i].coeffs) == 0)
+        {
+            doneflags |= 1 << i; // set flag if randomness was sufficient (happens with overwhelming prob)
+        }
+    }
+
+    // the following block handles the improbable case that the randomness did not suffice for at least one polynomial
+    unsigned int bytesleft = HWTSHAKEBLOCKS*SHAKE256_RATE - HWTSEEDBYTES;
+    while (doneflags != ((1<<MODULE_RANK)-1)) {
+        for (i = 0; i < MODULE_RANK; ++i) { // re-order randomness (basically a memmove)
+            if (doneflags & (1<<i))
+            {
+                continue;
+            }
+            for (j = 0; j < bytesleft; j++)
+            {
+                buf[i].coeffs[j] = buf[i].coeffs[j+HWTSEEDBYTES];
+            }
+        }
+        if (bytesleft < HWTSEEDBYTES + LWE_N/4) // generate new randomess if necessary
+        {
+            shake256x4_squeezeblocks(&buf[0].coeffs[HWTSEEDBYTES], &buf[1].coeffs[HWTSEEDBYTES], &buf[2].coeffs[HWTSEEDBYTES], &buf[3].coeffs[HWTSEEDBYTES], ((HWTSEEDBYTES + LWE_N/4) - bytesleft + SHAKE256_RATE - 1) / SHAKE256_RATE, &state);
+            bytesleft += (((HWTSEEDBYTES + LWE_N/4) - bytesleft + SHAKE256_RATE - 1) / SHAKE256_RATE) * SHAKE256_RATE;
+        }
+        for (i = 0; i < MODULE_RANK; ++i) {
+            if (doneflags & (1<<i)) // skip iterations that we have already done
+            {
+                continue;
+            }
+            load16_littleendian(rand[i].coeffs, HWTSEEDBYTES / 2, buf[i].coeffs);
+            if (rejsampling_mod(si[i].coeffs, rand[i].coeffs) == 0)
+            {
+                doneflags |= 1 << i; // set flag if randomness was sufficient (happens with overwhelming prob)
+            }
+        }
+        bytesleft -= HWTSEEDBYTES;
+    }
+
+    for (i = 0; i < MODULE_RANK; ++i) {
+        memcpy(sign[i].coeffs, buf[i].coeffs + HWTSEEDBYTES, LWE_N / 4);
+
+        int16_t t0;
+        int16_t c0 = LWE_N - HS;
+        for (j = 0; j < LWE_N; j++) {
+            t0 = (si[i].coeffs[j] - c0) >> 15;
+            c0 += t0;
+            r->vec[i].coeffs[j] = 1 + t0;
+            // Convert to ternary
+            // index of sign: (i / 16 / 8) * 16 + (i % 16)
+            // shift size   : (i / 16) % 8
+            r->vec[i].coeffs[j] = (-r->vec[i].coeffs[j]) & ((((sign[i].coeffs[(((j >> 4) >> 3) << 4) + (j & 0x0F)] >> ((j >> 4) & 0x07)) << 1) & 0x02) - 1);    
+        }
+    }
 }

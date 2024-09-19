@@ -6,7 +6,7 @@
 #include "parameters.h"
 #include "speed_print.h"
 
-#define NTESTS 1000
+#define NTESTS 10000
 
 uint64_t t[NTESTS];
 
