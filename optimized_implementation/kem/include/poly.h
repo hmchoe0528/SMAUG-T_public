@@ -14,12 +14,11 @@ typedef struct {
     poly vec[MODULE_RANK];
 } polyvec;
 
-#define vec_vec_mult SMAUG_NAMESPACE(vec_vec_mult)
-void vec_vec_mult(poly *r, const polyvec *a, const polyvec *b);
+#define vec_vec_mult_add_p SMAUG_NAMESPACE(vec_vec_mult_add_p)
+void vec_vec_mult_add_p(poly *r, const polyvec *a, const polyvec *b);
+#define vec_vec_mult_add_q SMAUG_NAMESPACE(vec_vec_mult_add_q)
+void vec_vec_mult_add_q(poly *r, const polyvec *a, const polyvec *b);
 
-#define vec_vec_mult_add SMAUG_NAMESPACE(vec_vec_mult_add)
-void vec_vec_mult_add(poly *r, const polyvec *a, const polyvec *b,
-                      const uint8_t mod);
 #define matrix_vec_mult_add SMAUG_NAMESPACE(matrix_vec_mult_add)
 void matrix_vec_mult_add(polyvec *r, const polyvec a[MODULE_RANK],
                          const polyvec *b);

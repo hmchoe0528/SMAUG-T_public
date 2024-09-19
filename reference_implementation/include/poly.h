@@ -16,9 +16,6 @@ typedef struct {
     poly vec[MODULE_RANK];
 } polyvec;
 
-#define vec_vec_mult SMAUG_NAMESPACE(vec_vec_mult)
-void vec_vec_mult(poly *r, const polyvec *a, const polyvec *b);
-
 #define vec_vec_mult_add SMAUG_NAMESPACE(vec_vec_mult_add)
 void vec_vec_mult_add(poly *r, const polyvec *a, const polyvec *b,
                       const uint8_t mod);

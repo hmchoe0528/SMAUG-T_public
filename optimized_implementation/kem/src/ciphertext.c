@@ -11,6 +11,13 @@
  *              - polyvec *A: pointer to input matrix of public A
  *              - polyvec *r: pointer to input vector of ephemeral key r
  **************************************************/
+static const union {
+    int16_t coeffs[32];
+    __m256i vec[2];
+} computec1_consts = {.coeffs = {
+    RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, RD_ADD, 
+    RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND, RD_AND
+}};
 void computeC1(polyvec *c1, const polyvec A[MODULE_RANK], const polyvec *r) {
     unsigned int i, j;
 
@@ -19,9 +26,10 @@ void computeC1(polyvec *c1, const polyvec A[MODULE_RANK], const polyvec *r) {
 
     // Rounding q to p
     for (i = 0; i < MODULE_RANK; ++i) {
-        for (j = 0; j < LWE_N; ++j) {
-            c1->vec[i].coeffs[j] =
-                ((c1->vec[i].coeffs[j] + RD_ADD) & RD_AND) >> _16_LOG_P;
+        for (j = 0; j < LWE_N/16; ++j) {
+            c1->vec[i].vec[j] = _mm256_add_epi16(c1->vec[i].vec[j], computec1_consts.vec[0]);
+            c1->vec[i].vec[j] = _mm256_and_si256(c1->vec[i].vec[j], computec1_consts.vec[1]);
+            c1->vec[i].vec[j] = _mm256_srai_epi16(c1->vec[i].vec[j], _16_LOG_P);
         }
     }
 }
@@ -49,7 +57,7 @@ void computeC2(poly *c2, const uint8_t delta[DELTA_BYTES], const polyvec *b,
     }
 
     // c2 = q/2 * delta + (b * r)
-    vec_vec_mult_add(c2, b, r, _16_LOG_Q);
+    vec_vec_mult_add_q(c2, b, r);
 
     // Rounding q to p'
     for (i = 0; i < LWE_N; ++i) {

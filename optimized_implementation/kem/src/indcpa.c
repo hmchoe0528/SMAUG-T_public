@@ -147,7 +147,7 @@ void indcpa_dec(uint8_t delta[DELTA_BYTES],
             c1_temp.vec[i].coeffs[j] <<= _16_LOG_P;
 
     // Compute delta = (delta + c1^T * s)
-    vec_vec_mult_add(&delta_temp, &c1_temp, &sk_tmp, _16_LOG_P);
+    vec_vec_mult_add_p(&delta_temp, &c1_temp, &sk_tmp);
 
     // Compute delta = 2/p * delta
     for (i = 0; i < LWE_N; ++i) {
