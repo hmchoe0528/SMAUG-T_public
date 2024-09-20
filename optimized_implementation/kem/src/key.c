@@ -208,33 +208,7 @@ void genBx(polyvec *b, const polyvec A[MODULE_RANK], const polyvec *s,
  *                                     length CRYPTO_BYTES)
  **************************************************/
 void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
-    unsigned int i;
-    ALIGNED_UINT8(5 * SHAKE256_RATE) buf[4] = {0};
-
-#if MODULE_RANK > 4
-#error "This function assumes MODULE_RANK <= 4."
-#endif
-#if CRYPTO_BYTES != 32
-#error "This function assumes CRYPTO_BYTES == 32."
-#endif
-
-    __m256i f = _mm256_loadu_si256((__m256i *)seed);
-    _mm256_store_si256(buf[0].vec, f);
-    _mm256_store_si256(buf[1].vec, f);
-    _mm256_store_si256(buf[2].vec, f);
-    _mm256_store_si256(buf[3].vec, f);
-    buf[0].coeffs[32] = 0;
-    buf[1].coeffs[32] = MODULE_RANK * 1;
-    buf[2].coeffs[32] = MODULE_RANK * 2;
-    buf[3].coeffs[32] = MODULE_RANK * 3;
-
-    shake256x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs,
-               HWTSEEDBYTES + LWE_N / 4, buf[0].coeffs, buf[1].coeffs,
-               buf[2].coeffs, buf[3].coeffs, CRYPTO_BYTES + 1);
-
-    for (i = 0; i < MODULE_RANK; ++i) {
-        hwt(sk->vec[i].coeffs, buf[i].coeffs);
-    }
+    hwt(sk, seed);
 }
 
 /*************************************************
