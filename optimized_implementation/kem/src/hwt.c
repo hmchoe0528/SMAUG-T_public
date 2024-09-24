@@ -159,8 +159,7 @@ static int rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
 #define HWTSHAKEBLOCKS                                                         \
     ((HWTSEEDBYTES + LWE_N / 4 + SHAKE256_RATE - 1) / SHAKE256_RATE)
 #define HWTSHAKEBUFSIZE                                                        \
-    (((HWTSEEDBYTES * 2 + LWE_N / 4 + SHAKE256_RATE - 1) / SHAKE256_RATE) *    \
-     SHAKE256_RATE)
+    (HWTSHAKEBLOCKS * SHAKE256_RATE)
 void hwt(polyvec *r, const uint8_t seed[CRYPTO_BYTES]) {
 
     unsigned int i, j;
@@ -177,72 +176,41 @@ void hwt(polyvec *r, const uint8_t seed[CRYPTO_BYTES]) {
 #error "This function assumes CRYPTO_BYTES == 32."
 #endif
 
-    __m256i f = _mm256_loadu_si256((__m256i *)seed);
-    _mm256_store_si256(buf[0].vec, f);
-    _mm256_store_si256(buf[1].vec, f);
-    _mm256_store_si256(buf[2].vec, f);
-    _mm256_store_si256(buf[3].vec, f);
-    buf[0].coeffs[32] = 0;
-    buf[1].coeffs[32] = MODULE_RANK * 1;
-    buf[2].coeffs[32] = MODULE_RANK * 2;
-    buf[3].coeffs[32] = MODULE_RANK * 3;
-
-    shake256x4_absorb_once(&state, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs,
-                           buf[3].coeffs, CRYPTO_BYTES + 1);
     uint8_t doneflags = 0;
-    shake256x4_squeezeblocks(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs,
-                             buf[3].coeffs, HWTSHAKEBLOCKS, &state);
+    j = 0;
+    do {
+        __m256i f = _mm256_loadu_si256((__m256i *)seed);
+        _mm256_store_si256(buf[0].vec, f);
+        _mm256_store_si256(buf[1].vec, f);
+        _mm256_store_si256(buf[2].vec, f);
+        _mm256_store_si256(buf[3].vec, f);
+        buf[0].coeffs[32] = 0;
+        buf[1].coeffs[32] = MODULE_RANK * 1;
+        buf[2].coeffs[32] = MODULE_RANK * 2;
+        buf[3].coeffs[32] = MODULE_RANK * 3;
+        buf[0].coeffs[33] = j;
+        buf[1].coeffs[33] = j;
+        buf[2].coeffs[33] = j;
+        buf[3].coeffs[33] = j;
 
-    for (i = 0; i < MODULE_RANK; ++i) {
-        load16_littleendian(rand[i].coeffs, HWTSEEDBYTES / 2, buf[i].coeffs);
-        if (rejsampling_mod(si[i].coeffs, rand[i].coeffs) == 0) {
-            doneflags |= 1 << i; // set flag if randomness was sufficient
-                                 // (happens with overwhelming prob)
-        }
-    }
+        shake256x4_absorb_once(&state, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs,
+                            buf[3].coeffs, CRYPTO_BYTES + 2);
+        shake256x4_squeezeblocks(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs,
+                                buf[3].coeffs, HWTSHAKEBLOCKS, &state);
 
-    // the following block handles the improbable case that the randomness did
-    // not suffice for at least one polynomial
-    unsigned int bytesleft = HWTSHAKEBLOCKS * SHAKE256_RATE - HWTSEEDBYTES;
-    while (doneflags != ((1 << MODULE_RANK) - 1)) {
-        for (i = 0; i < MODULE_RANK;
-             ++i) { // re-order randomness (basically a memmove)
-            if (doneflags & (1 << i)) {
-                continue;
-            }
-            for (j = 0; j < bytesleft; j++) {
-                buf[i].coeffs[j] = buf[i].coeffs[j + HWTSEEDBYTES];
-            }
-        }
-        if (bytesleft <
-            HWTSEEDBYTES + LWE_N / 4) // generate new randomess if necessary
-        {
-            shake256x4_squeezeblocks(
-                &buf[0].coeffs[HWTSEEDBYTES], &buf[1].coeffs[HWTSEEDBYTES],
-                &buf[2].coeffs[HWTSEEDBYTES], &buf[3].coeffs[HWTSEEDBYTES],
-                ((HWTSEEDBYTES + LWE_N / 4) - bytesleft + SHAKE256_RATE - 1) /
-                    SHAKE256_RATE,
-                &state);
-            bytesleft +=
-                (((HWTSEEDBYTES + LWE_N / 4) - bytesleft + SHAKE256_RATE - 1) /
-                 SHAKE256_RATE) *
-                SHAKE256_RATE;
-        }
         for (i = 0; i < MODULE_RANK; ++i) {
-            if (doneflags &
-                (1 << i)) // skip iterations that we have already done
+            if ((1 << i) & doneflags)
             {
                 continue;
             }
-            load16_littleendian(rand[i].coeffs, HWTSEEDBYTES / 2,
-                                buf[i].coeffs);
+            load16_littleendian(rand[i].coeffs, HWTSEEDBYTES / 2, buf[i].coeffs);
             if (rejsampling_mod(si[i].coeffs, rand[i].coeffs) == 0) {
                 doneflags |= 1 << i; // set flag if randomness was sufficient
-                                     // (happens with overwhelming prob)
+                                    // (happens with overwhelming prob)
             }
         }
-        bytesleft -= HWTSEEDBYTES;
-    }
+        j += 1;
+    } while (doneflags != ((1 << MODULE_RANK)-1));
 
     for (i = 0; i < MODULE_RANK; ++i) {
         memcpy(sign[i].coeffs, buf[i].coeffs + HWTSEEDBYTES, LWE_N / 4);

@@ -70,9 +70,9 @@ static int rejsampling_mod(int16_t res[LWE_N], const uint16_t *rand) {
  *
  * Arguments:   - int16_t *res: pointer to ouptput polynomial r(x)
  *                (of length LWE), assumed to be already initialized
- *              - uint8_t *seed: pointer to input seed (of length CRYPTO_BYTES)
+ *              - uint8_t *seed: pointer to input seed (of length CRYPTO_BYTES + 2)
  **************************************************/
-void hwt(int16_t *res, const uint8_t *seed) {
+int hwt(int16_t *res, const uint8_t *seed) {
     unsigned int i;
     int16_t si[LWE_N] = {0};
     uint16_t rand[HWTSEEDBYTES / 2] = {0};
@@ -81,13 +81,15 @@ void hwt(int16_t *res, const uint8_t *seed) {
 
     keccak_state state;
     shake256_init(&state);
-    shake256_absorb_once(&state, seed, CRYPTO_BYTES + 1);
+    shake256_absorb_once(&state, seed, CRYPTO_BYTES + 2);
 
     // only executed once with overwhelming probability:
-    do {
-        shake256_squeeze(buf, HWTSEEDBYTES, &state);
-        load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
-    } while (rejsampling_mod(si, rand));
+    shake256_squeeze(buf, HWTSEEDBYTES, &state);
+    load16_littleendian(rand, HWTSEEDBYTES / 2, buf);
+    if (rejsampling_mod(si, rand))
+    {
+        return -1;
+    }
 
     shake256_squeeze(sign, LWE_N / 4, &state);
 
@@ -104,4 +106,5 @@ void hwt(int16_t *res, const uint8_t *seed) {
             (-res[i]) &
             ((((sign[(((i >> 4) >> 3) << 4) + (i & 0x0F)] >> ((i >> 4) & 0x07)) << 1) & 0x02) - 1);
     }
+    return 0;
 }

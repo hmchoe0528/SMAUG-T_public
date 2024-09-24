@@ -13,6 +13,6 @@
 #define HWTSEEDBYTES ((16 * 308) / 8)
 
 #define hwt SMAUG_NAMESPACE(hwt)
-void hwt(int16_t *res, const uint8_t *seed);
+int hwt(int16_t *res, const uint8_t *seed);
 
 #endif // SMAUG_HWT_H
