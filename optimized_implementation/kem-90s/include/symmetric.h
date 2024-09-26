@@ -7,7 +7,6 @@
 #include "aes256ctr.h"
 #include "sha2.h"
 
-#define XOF_BLOCKBYTES 136
 #define XOF_MAXBLOCK                                                           \
     ((PKPOLYMAT_BYTES + (AES256CTR_BLOCKBYTES - 1)) / AES256CTR_BLOCKBYTES)
 #define HASH_G_INBYTES (T_BYTES + SHA_256_HashSize)
