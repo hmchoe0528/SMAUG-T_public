@@ -45,7 +45,10 @@ void indcpa_keypair(uint8_t pk[PUBLICKEY_BYTES],
 
     uint8_t seed[CRYPTO_BYTES + PKSEED_BYTES] = {0};
     randombytes(seed, CRYPTO_BYTES);
-    shake256(seed, CRYPTO_BYTES + PKSEED_BYTES, seed, CRYPTO_BYTES);
+#if CRYPTO_BYTES + PKSEED_BYTES != 64
+#error "This implementation assumes CRYPTO_BYTES + PKSEED_BYTES to be 64"
+#endif
+    sha3_512(seed, seed, CRYPTO_BYTES);
 
     genSx_vec(&sk_tmp, seed);
 

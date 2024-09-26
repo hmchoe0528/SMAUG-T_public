@@ -223,7 +223,6 @@ void genSx_vec(secret_key *sk, const uint8_t seed[CRYPTO_BYTES]) {
  **************************************************/
 void genPubkey(public_key *pk, const secret_key *sk,
                const uint8_t err_seed[CRYPTO_BYTES]) {
-    shake128(pk->seed, PKSEED_BYTES, pk->seed, PKSEED_BYTES);
     genAx(pk->A, pk->seed);
 
     memset(&(pk->b), 0, sizeof(uint16_t) * LWE_N);

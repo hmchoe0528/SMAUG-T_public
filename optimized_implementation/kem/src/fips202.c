@@ -183,3 +183,22 @@ void sha3_256(uint8_t *output, const uint8_t *input, size_t inlen) {
     sha3_256_absorb(&state, input, inlen);
     sha3_256_finalize(output, &state);
 }
+
+/* sha3-512 */
+void sha3_512_init(keccak_state *state) { keccak_init(state->s); }
+
+void sha3_512_absorb(keccak_state *state, const uint8_t *input, size_t inlen) {
+    keccak_absorb(state->s, SHA3_512_RATE, input, inlen);
+}
+
+void sha3_512_finalize(uint8_t *output, keccak_state *state) {
+    keccak_finalize(state->s, SHA3_512_RATE, 0x06);
+    keccak_squeeze(output, 64, state->s, SHA3_512_RATE);
+}
+
+void sha3_512(uint8_t *output, const uint8_t *input, size_t inlen) {
+    keccak_state state;
+    sha3_512_init(&state);
+    sha3_512_absorb(&state, input, inlen);
+    sha3_512_finalize(output, &state);
+}

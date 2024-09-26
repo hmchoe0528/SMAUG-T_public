@@ -59,4 +59,14 @@ void sha3_256_finalize(uint8_t *output, keccak_state *state);
 #define sha3_256 FIPS202AVX_NAMESPACE(sha3_256)
 void sha3_256(uint8_t *output, const uint8_t *input, size_t inlen);
 
+/* sha3-512 */
+#define sha3_512_init FIPS202AVX_NAMESPACE(sha3_512_init)
+void sha3_512_init(keccak_state *state);
+#define sha3_512_absorb FIPS202AVX_NAMESPACE(sha3_512_absorb)
+void sha3_512_absorb(keccak_state *state, const uint8_t *input, size_t inlen);
+#define sha3_512_finalize FIPS202AVX_NAMESPACE(sha3_512_finalize)
+void sha3_512_finalize(uint8_t *output, keccak_state *state);
+#define sha3_512 FIPS202AVX_NAMESPACE(sha3_512)
+void sha3_512(uint8_t *output, const uint8_t *input, size_t inlen);
+
 #endif // FIPS202_H
