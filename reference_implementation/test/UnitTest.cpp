@@ -2,9 +2,6 @@
 #include <string>
 
 extern "C" {
-#ifdef AVX2
-#include "align.h"
-#endif
 #include "cbd.h"
 #include "ciphertext.h"
 #include "io.h"
@@ -160,15 +157,18 @@ void testCBD() {
         poly r;
         int plus = 0, minus = 0;
         uint8_t seed[CRYPTO_BYTES] = {0};
-#ifdef AVX2
+#if defined(AVX_KECCAK) || defined(AVX_90S)
         ALIGNED_UINT8(CBDSEED_BYTES) extseed;
 #else
         uint8_t extseed[CBDSEED_BYTES];
 #endif
         randombytes(seed, CRYPTO_BYTES);
 
-#ifdef AVX2
+#if defined(AVX_KECCAK)
         shake256(extseed.coeffs, CBDSEED_BYTES, seed, CRYPTO_BYTES);
+        poly_cbd(&r, extseed.CBDSEED_FIELD);
+#elif defined(AVX_90S)
+        prf(extseed.coeffs, CBDSEED_BYTES, seed, 0);
         poly_cbd(&r, extseed.CBDSEED_FIELD);
 #else
         shake256(extseed, CBDSEED_BYTES, seed, CRYPTO_BYTES);
@@ -244,7 +244,11 @@ void testMultOneVector() {
                 sum.coeffs[k] += vec1.vec[j].coeffs[k];
             }
         }
+#ifdef AVX_KECCAK
+        vec_vec_mult_add_q(&res, &vec1, &s);
+#else
         vec_vec_mult_add(&res, &vec1, &s, _16_LOG_Q);
+#endif
         ASSERT_TRUE(polyEq(res, sum, LWE_N));
     }
 }
