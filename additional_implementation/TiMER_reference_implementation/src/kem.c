@@ -34,12 +34,12 @@ void crypto_kem_keypair(uint8_t *pk, uint8_t *sk) {
  * Returns 0(success) or 1(failure).
  **************************************************/
 int crypto_kem_enc(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
-    uint8_t mu[MSG_BYTES] = {0}; // shared secret and seed
+    uint8_t mu[MSG_BYTES] = {0}; // shared secret and seed    // EDIT TiMER
     uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0};
 
-    randombytes(mu, MSG_BYTES);
+    randombytes(mu, MSG_BYTES);// EDIT TiMER
     hash_h(buf, pk, PUBLICKEY_BYTES);
-    hash_g(buf, DELTA_BYTES + CRYPTO_BYTES, mu, MSG_BYTES, buf,
+    hash_g(buf, DELTA_BYTES + CRYPTO_BYTES, mu, MSG_BYTES, buf, // EDIT TiMER
            SHA3_256_HashSize);
 
     indcpa_enc(ctxt, pk, mu, buf);

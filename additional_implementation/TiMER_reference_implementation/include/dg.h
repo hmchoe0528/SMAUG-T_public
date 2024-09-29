@@ -1,5 +1,5 @@
-#ifndef TIMER_DG_H
-#define TIMER_DG_H
+#ifndef TiMER_DG_H
+#define TiMER_DG_H
 
 #include <fips202.h>
 #include <stdint.h>
@@ -20,9 +20,9 @@
 // sample a single error from (RANDBITS)-length of random binary string
 
 // A discrete error distribution close to the discrete Gaussian distribution
-#define addGaussianError TIMER_NAMESPACE(addGaussianError)
+#define addGaussianError TiMER_NAMESPACE(addGaussianError)
 int addGaussianError(poly *op, const uint8_t *seed);
-#define addGaussianErrorVec TIMER_NAMESPACE(addGaussianErrorVec)
+#define addGaussianErrorVec TiMER_NAMESPACE(addGaussianErrorVec)
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]);
 
-#endif // TIMER_DG_H
+#endif // TiMER_DG_H

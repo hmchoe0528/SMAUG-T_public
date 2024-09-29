@@ -2,6 +2,7 @@
 #include <string>
 
 extern "C" {
+#include "cbd.h"
 #include "ciphertext.h"
 #include "io.h"
 #include "kem.h"
@@ -77,13 +78,7 @@ void checkSkEq(const uint8_t sk1[KEM_SECRETKEY_BYTES],
 bool isSkDiff(const secret_key &sk1, const secret_key &sk2) {
     bool res = false;
     for (size_t i = 0; i < MODULE_RANK; ++i)
-        res |= (sk1.sp_vec[i].cnt - sk2.sp_vec[i].cnt);
-
-    for (size_t i = 0; i < MODULE_RANK; ++i)
-        res |= !arrayEq(sk1.sp_vec[i].sx, sk2.sp_vec[i].sx, sk1.sp_vec[i].cnt);
-
-    for (size_t i = 0; i < MODULE_RANK; ++i)
-        res |= (sk1.sp_vec[i].neg_start - sk2.sp_vec[i].neg_start);
+        res |= !arrayEq(sk1.vec[i].coeffs, sk2.vec[i].coeffs, LWE_N);
 
     return res;
 }
@@ -124,17 +119,64 @@ void testPacking() {
         ASSERT_TRUE(arrayEq(bytes1, bytes2, CTPOLYVEC_BYTES));
     }
     for (size_t i = 0; i < count; i++) {
-        uint8_t bytes1[SKPOLYVEC_BYTES] = {0};
-        uint8_t bytes2[SKPOLYVEC_BYTES] = {0};
-        uint8_t data[SKPOLYVEC_BYTES] = {0};
-        uint8_t sum_data_len = 0;
+        uint8_t bytes[SKPOLYVEC_BYTES] = {0};
+        secret_key data1, data2;
 
-        randombytes(bytes1, SKPOLYVEC_BYTES);
-        memcpy(bytes2, bytes1, SKPOLYVEC_BYTES);
-        bytes_to_Sx(data, bytes1, SKPOLYVEC_BYTES);
-        Sx_to_bytes(bytes1, data, SKPOLYVEC_BYTES);
+        uint8_t seed[CRYPTO_BYTES] = {0};
+        randombytes(seed, CRYPTO_BYTES);
+        genSx_vec(&data1, seed);
 
-        ASSERT_TRUE(arrayEq(bytes1, bytes2, SKPOLYVEC_BYTES));
+        for (size_t j = 0; j < MODULE_RANK; ++j) {
+            Sx_to_bytes(bytes, &data1.vec[j]);
+            bytes_to_Sx(&data2.vec[j], bytes);
+
+            ASSERT_TRUE(
+                arrayEq(data1.vec[j].coeffs, data2.vec[j].coeffs, LWE_N));
+        }
+    }
+}
+
+static inline int weight(int *plus, int *minus, const int16_t p[LWE_N]) {
+    int zero = 0;
+    for (size_t i = 0; i < LWE_N; i++) {
+        if (p[i] == 1)
+            *plus += 1;
+        else if (p[i] == -1)
+            *minus += 1;
+        else if (p[i] == 0)
+            zero += 1;
+        else
+            return p[i];
+    }
+    return zero;
+}
+
+void testCBD() {
+    const unsigned count = 10000;
+    for (size_t i = 0; i < count; i++) {
+        poly r;
+        int plus = 0, minus = 0;
+        uint8_t seed[CRYPTO_BYTES] = {0};
+#if defined(AVX_KECCAK) || defined(AVX_90S)
+        ALIGNED_UINT8(CBDSEED_BYTES) extseed;
+#else
+        uint8_t extseed[CBDSEED_BYTES];
+#endif
+        randombytes(seed, CRYPTO_BYTES);
+
+#if defined(AVX_KECCAK)
+        shake256(extseed.coeffs, CBDSEED_BYTES, seed, CRYPTO_BYTES);
+        poly_cbd(&r, extseed.CBDSEED_FIELD);
+#elif defined(AVX_90S)
+        prf(extseed.coeffs, CBDSEED_BYTES, seed, 0);
+        poly_cbd(&r, extseed.CBDSEED_FIELD);
+#else
+        shake256(extseed, CBDSEED_BYTES, seed, CRYPTO_BYTES);
+        poly_cbd(&r, extseed);
+#endif
+
+        int zero = weight(&plus, &minus, r.coeffs);
+        ASSERT_TRUE((zero + plus + minus) == LWE_N);
     }
 }
 
@@ -144,88 +186,87 @@ void testMultOneVector() {
         uint8_t matbytes[PKPOLYMAT_BYTES];
         polyvec A[MODULE_RANK];
         polyvec vec1, vec2;
-        sppoly s_vec[MODULE_RANK];
+        polyvec s;
+        memset(&s, 0, sizeof s);
 
         randombytes(matbytes, PKPOLYMAT_BYTES);
         bytes_to_Rq_mat(A, matbytes);
         memset(&vec1, 0, sizeof vec1);
         memset(&vec2, 0, sizeof vec2);
         for (size_t j = 0; j < MODULE_RANK; j++) {
-            s_vec[j].sx = (uint8_t *)calloc(1, sizeof(uint8_t));
-            s_vec[j].sx[0] = 0;
-            s_vec[j].cnt = 1;
-            s_vec[j].neg_start = 1;
+            s.vec[j].coeffs[0] = 1;
             for (size_t k = 0; k < MODULE_RANK; k++) {
                 for (size_t l = 0; l < LWE_N; l++) {
-                    vec2.vec[j].coeffs[l] += A[j].vec[k].coeffs[l];
+                    vec2.vec[k].coeffs[l] += A[j].vec[k].coeffs[l];
                 }
             }
         }
-        matrix_vec_mult_add(&vec1, A, s_vec, 0);
-        for (size_t j = 0; j < MODULE_RANK; j++) {
-            free(s_vec[j].sx);
-        }
+        matrix_vec_mult_add(&vec1, A, &s);
         ASSERT_TRUE(RvecEq(vec1, vec2));
     }
     for (size_t i = 0; i < count; i++) { // check -(A * -[1] ^ (MODULE_RANK))
         uint8_t matbytes[PKPOLYMAT_BYTES];
         polyvec A[MODULE_RANK];
         polyvec vec1, vec2;
-        sppoly s_vec[MODULE_RANK];
+        polyvec s;
+        memset(&s, 0, sizeof s);
 
         randombytes(matbytes, PKPOLYMAT_BYTES);
         bytes_to_Rq_mat(A, matbytes);
         memset(&vec1, 0, sizeof vec1);
         memset(&vec2, 0, sizeof vec2);
         for (size_t j = 0; j < MODULE_RANK; j++) {
-            s_vec[j].sx = (uint8_t *)calloc(1, sizeof(uint8_t));
-            s_vec[j].sx[0] = 0;
-            s_vec[j].cnt = 1;
-            s_vec[j].neg_start = 0;
+            s.vec[j].coeffs[0] = -1;
             for (size_t k = 0; k < MODULE_RANK; k++) {
                 for (size_t l = 0; l < LWE_N; l++) {
                     vec2.vec[j].coeffs[l] += A[j].vec[k].coeffs[l];
                 }
             }
         }
-        matrix_vec_mult_sub(&vec1, A, s_vec, 0);
-        for (size_t j = 0; j < MODULE_RANK; ++j)
-            free(s_vec[j].sx);
+        matrix_vec_mult_sub(&vec1, A, &s);
         ASSERT_TRUE(RvecEq(vec1, vec2));
     }
     for (size_t i = 0; i < count; i++) { // check b^(T) * [1] ^ (MODULE_RANK)
         polyvec vec1;
-        sppoly s_vec[MODULE_RANK];
+        polyvec s;
         poly res;
         poly sum;
+        memset(&s, 0, sizeof s);
 
+        uint8_t vecbytes[PKPOLYVEC_BYTES];
+        randombytes(vecbytes, PKPOLYVEC_BYTES);
+        bytes_to_Rq_vec(&vec1, vecbytes);
         memset(&res, 0, sizeof res);
         memset(&sum, 0, sizeof sum);
         for (size_t j = 0; j < MODULE_RANK; j++) {
-            s_vec[j].sx = (uint8_t *)calloc(1, sizeof(uint8_t));
-            s_vec[j].sx[0] = 0;
-            s_vec[j].cnt = 1;
-            s_vec[j].neg_start = 1;
+            s.vec[j].coeffs[0] = 1;
             for (size_t k = 0; k < LWE_N; k++) {
                 sum.coeffs[k] += vec1.vec[j].coeffs[k];
             }
         }
-        vec_vec_mult_add(&res, &vec1, s_vec);
-        for (size_t j = 0; j < MODULE_RANK; ++j)
-            free(s_vec[j].sx);
+#ifdef AVX_KECCAK
+        vec_vec_mult_add_q(&res, &vec1, &s);
+#else
+        vec_vec_mult_add(&res, &vec1, &s, _16_LOG_Q);
+#endif
         ASSERT_TRUE(polyEq(res, sum, LWE_N));
     }
 }
 
+void print_poly(int16_t *x) {
+    for (int i = 0; i < LWE_N; ++i)
+        printf("%d ", x[i]);
+    printf("\n");
+}
 void testMultAddSub() {
-    const unsigned count = 10000;
+    const unsigned count = 1;
     for (size_t i = 0; i < count; i++) {
         uint8_t matbytes[PKPOLYMAT_BYTES];
-        polyvec A[MODULE_RANK];
+        polyvec A[MODULE_RANK], At[MODULE_RANK];
         uint8_t vecbytes[PKPOLYVEC_BYTES];
         polyvec vec1, vec2;
         uint8_t sk_seed[CRYPTO_BYTES] = {0};
-        SecretKey sk;
+        secret_key sk;
         randombytes(matbytes, PKPOLYMAT_BYTES);
         randombytes(vecbytes, PKPOLYVEC_BYTES);
         randombytes(sk_seed, CRYPTO_BYTES);
@@ -233,8 +274,20 @@ void testMultAddSub() {
         bytes_to_Rq_vec(&vec1, vecbytes);
         bytes_to_Rq_vec(&vec2, vecbytes);
         genSx_vec(&sk, sk_seed);
-        matrix_vec_mult_add(&vec1, A, sk.sp_vec, 0);
-        matrix_vec_mult_sub(&vec1, A, sk.sp_vec, 0);
+        for (size_t l = 0; l < MODULE_RANK; ++l) {
+            for (size_t j = 0; j < MODULE_RANK; ++j)
+                for (size_t k = 0; k < LWE_N; ++k)
+                    At[l].vec[j].coeffs[k] = A[j].vec[l].coeffs[k];
+        }
+
+        polyvec res;
+        memset(&res, 0, sizeof res);
+        matrix_vec_mult_add(&res, A, &sk);
+        for (size_t l = 0; l < MODULE_RANK; ++l) {
+            for (size_t k = 0; k < LWE_N; ++k)
+                vec1.vec[l].coeffs[k] += res.vec[l].coeffs[k];
+        }
+        matrix_vec_mult_sub(&vec1, At, &sk);
         ASSERT_TRUE(RvecEq(vec1, vec2));
     }
 }
@@ -337,18 +390,18 @@ void testCiphertextEncDec(bool isPKE) {
         }
 
         uint8_t mx[MSG_BYTES] = {0}, seed[DELTA_BYTES] = {0};
-        randombytes(mx, MSG_BYTES); // EDIT_TiMER
+        randombytes(mx, MSG_BYTES);  //EDIT_TiMER
         randombytes(seed, DELTA_BYTES);
 
         uint8_t ctxt[CIPHERTEXT_BYTES] = {0};
         if (isPKE) {
-            indcpa_enc(ctxt, pk, mx, seed); // EDIT_TiMER
+            indcpa_enc(ctxt, pk, mx, seed);
         } else {
             int encapRes = crypto_kem_enc(ctxt, mx, pk);
             ASSERT_EQ(encapRes, 0) << "crypto_kem_encapsulation failed";
         }
 
-        uint8_t mx2[MSG_BYTES] = {0};
+        uint8_t mx2[MSG_BYTES] = {0};  // EDIT_TiMER
         if (isPKE) {
             indcpa_dec(mx2, sk, ctxt);
         } else {
@@ -356,11 +409,13 @@ void testCiphertextEncDec(bool isPKE) {
             ASSERT_EQ(decapRes, 0) << "crypto_kem_decapsulation failed";
         }
 
-        ASSERT_TRUE(arrayEq(mx, mx2, MSG_BYTES)) << "Messages are different";
+        ASSERT_TRUE(arrayEq(mx, mx2, MSG_BYTES)) << "Messages are different";  // EDIT_TiMER
     }
 }
 
 TEST(General, Packing) { testPacking(); }
+
+TEST(General, CBD) { testCBD(); }
 
 TEST(General, MultOneVector) { testMultOneVector(); }
 

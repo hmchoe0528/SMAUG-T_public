@@ -1,5 +1,5 @@
-#ifndef TIMER_HWT_H
-#define TIMER_HWT_H
+#ifndef TiMER_HWT_H
+#define TiMER_HWT_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -8,11 +8,11 @@
 #include "fips202.h"
 #include "parameters.h"
 
-#define HS_XOF 4
-#define HR_XOF 5
+// https://github.com/dgazzoni/NTRU-sampling/blob/main/jupyter/NTRU-sampling.ipynb
+// Use enough seed size 308
+#define HWTSEEDBYTES ((16 * 308) / 8)
 
-#define hwt TIMER_NAMESPACE(hwt)
-void hwt(uint8_t *res, uint8_t *cnt_arr, const uint8_t *input,
-         const size_t input_size, const uint16_t hmwt);
+#define hwt TiMER_NAMESPACE(hwt)
+int hwt(int16_t *res, const uint8_t *seed);
 
-#endif // TIMER_HWT_H
+#endif // TiMER_HWT_H

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define m_size 16
+#define m_size 10
 
 int indcpa_test();
 int kem_test();
@@ -18,11 +18,11 @@ int main(void) {
     time_t mytime = time(NULL);
     char *time_str = ctime(&mytime);
     time_str[strlen(time_str) - 1] = '\0';
-    printf("\n*** %s with mode %d starts at %s\n", "TiMER KEM", TIMER_MODE,
+    printf("\n*** %s with mode %d starts at %s\n", "TiMER KEM", TiMER_MODE,
            time_str);
 
     size_t count = 1;
-    const size_t iteration = 10000;
+    const size_t iteration = 100000;
 
     for (size_t i = 0; i < iteration; ++i) {
         if (!(i % (iteration / 10))) {
@@ -31,15 +31,15 @@ int main(void) {
             ++count;
         }
 
-        if (indcpa_test()) {
-            printf("PKE test fails at %lu-th tries\n", i);
+        // if (indcpa_test()) {
+        //     printf("PKE test fails at %lu-th tries\n", i);
+        //     break;
+        // }
+
+        if (kem_test()) {
+            printf("KEM test fails at %lu-th tries\n", i);
             break;
         }
-
-        // if (kem_test()) {
-        //    printf("KEM test fails at %lu-th tries\n", i);
-        //    break;
-        //}
     }
 
     return 0;
@@ -49,13 +49,13 @@ int indcpa_test() {
     uint8_t pk[PUBLICKEY_BYTES] = {0};
     uint8_t sk[PKE_SECRETKEY_BYTES] = {0};
     uint8_t ctxt[CIPHERTEXT_BYTES] = {0};
-    uint8_t mu[MSG_BYTES] = {0}, mu2[MSG_BYTES] = {0};
+    uint8_t mu[MSG_BYTES] = {0}, mu2[MSG_BYTES] = {0};   //EDIT TiMER
     uint8_t seed[DELTA_BYTES] = {0};
 
     indcpa_keypair(pk, sk);
     // printf("indcpa_keypair done\n");
 
-    randombytes(mu, MSG_BYTES);
+    randombytes(mu, MSG_BYTES);    //EDIT TiMER
     randombytes(seed, DELTA_BYTES);
 
     indcpa_enc(ctxt, pk, mu, seed);
@@ -64,13 +64,13 @@ int indcpa_test() {
     indcpa_dec(mu2, sk, ctxt);
     // printf("indcpa_dec done\n");
 
-    if (memcmp(mu, mu2, MSG_BYTES) != 0) {
-        for (int i = 0; i < m_size; ++i)
-            printf("mu 0x%2hx ", mu[i]);
+    if (memcmp(mu, mu2, MSG_BYTES) != 0) {    //EDIT TiMER
+        for (int i = 0; i < m_size; ++i) 
+            printf("0x%2hx ", mu[i]);
         printf("\n");
 
         for (int i = 0; i < m_size; ++i)
-            printf("mp 0x%2hx ", mu2[i]);
+            printf("0x%2hx ", mu2[i]);
         printf("\n");
         return 1;
     }

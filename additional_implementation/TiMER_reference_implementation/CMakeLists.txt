@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(TiMER LANGUAGES C CXX) # CXX for google test
+project(timer LANGUAGES C CXX) # CXX for google test
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/)
@@ -33,6 +33,8 @@ set(srcs
     ${PROJECT_SOURCE_DIR}/src/indcpa.c
     ${PROJECT_SOURCE_DIR}/src/hash.c
     ${PROJECT_SOURCE_DIR}/src/verify.c
+    ${PROJECT_SOURCE_DIR}/src/toomcook.c
+    ${PROJECT_SOURCE_DIR}/src/cbd.c
 )
 
 if(MSVC)
@@ -96,11 +98,12 @@ if(ENABLE_CPPCHECK)
 endif()
 
 
-set(LIB_NAME1 ${PROJECT_NAME})
+set(LIB_NAME1 ${PROJECT_NAME}1)
 add_library(${LIB_NAME1} SHARED ${srcs})
-target_compile_definitions(${LIB_NAME1} PUBLIC TIMER_MODE=1)
+target_compile_definitions(${LIB_NAME1} PUBLIC TiMER_MODE=1)
 target_compile_options(${LIB_NAME1} PRIVATE ${C_FLAGS})
 target_link_libraries(${LIB_NAME1} PUBLIC ${LIB_RNG} ${LIB_FIPS202})
+
 
 add_subdirectory(test)
 add_subdirectory(kat)

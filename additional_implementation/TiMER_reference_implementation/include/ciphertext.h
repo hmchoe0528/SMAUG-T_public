@@ -1,5 +1,5 @@
-#ifndef TIMER_CIPHERTEXT_H
-#define TIMER_CIPHERTEXT_H
+#ifndef TiMER_CIPHERTEXT_H
+#define TiMER_CIPHERTEXT_H
 
 #include <stdint.h>
 
@@ -11,11 +11,10 @@ typedef struct Ciphertext {
     poly c2;
 } ciphertext;
 
-#define computeC1 TIMER_NAMESPACE(computeC1)
-void computeC1(polyvec *c1, const polyvec A[MODULE_RANK],
-               const sppoly r[MODULE_RANK]);
-#define computeC2 TIMER_NAMESPACE(computeC2)
+#define computeC1 TiMER_NAMESPACE(computeC1)
+void computeC1(polyvec *c1, const polyvec A[MODULE_RANK], const polyvec *r);
+#define computeC2 TiMER_NAMESPACE(computeC2)
 void computeC2(poly *c2, const uint8_t delta[MSG_BYTES], const polyvec *b,
-               const sppoly r[MODULE_RANK]);
+               const polyvec *r);
 
-#endif // TIMER_CIPHERTEXT_H
+#endif // TiMER_CIPHERTEXT_H

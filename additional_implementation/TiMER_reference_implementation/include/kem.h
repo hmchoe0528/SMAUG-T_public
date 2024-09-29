@@ -1,5 +1,5 @@
-#ifndef TIMER_KEM_H
-#define TIMER_KEM_H
+#ifndef TiMER_KEM_H
+#define TiMER_KEM_H
 
 #include "ciphertext.h"
 #include "hash.h"
@@ -9,11 +9,11 @@
 #include "randombytes.h"
 #include "verify.h"
 
-#define crypto_kem_keypair TIMER_NAMESPACE(crypto_kem_keypair)
+#define crypto_kem_keypair TiMER_NAMESPACE(crypto_kem_keypair)
 void crypto_kem_keypair(uint8_t *pk, uint8_t *sk);
-#define crypto_kem_enc TIMER_NAMESPACE(crypto_kem_enc)
+#define crypto_kem_enc TiMER_NAMESPACE(crypto_kem_enc)
 int crypto_kem_enc(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk);
-#define crypto_kem_dec TIMER_NAMESPACE(crypto_kem_dec)
+#define crypto_kem_dec TiMER_NAMESPACE(crypto_kem_dec)
 int crypto_kem_dec(uint8_t *ss, const uint8_t *ctxt, const uint8_t *sk);
 
-#endif // TIMER_KEM_H
+#endif // TiMER_KEM_H

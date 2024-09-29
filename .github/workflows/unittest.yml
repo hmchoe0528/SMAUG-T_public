@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["reference_implementation", "optimized_implementation/kem", "optimized_implementation/kem-90s"]
+        version: ["reference_implementation", "optimized_implementation/kem", "optimized_implementation/kem-90s", "additional_implementation/TiMER_reference_implementation"]
     steps:
     - name: Check out repository code
       uses: actions/checkout@v4

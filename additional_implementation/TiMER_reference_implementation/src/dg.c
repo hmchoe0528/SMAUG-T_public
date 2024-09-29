@@ -1,12 +1,37 @@
 #include "dg.h"
 
+/*************************************************
+ * Name:        load64_littleendian
+ *
+ * Description: load 8 bytes into a 64-bit integer
+ *              in little-endian order
+ *
+ * Arguments:   - uint64_t *out: pointer to output int64_t array
+ *              - int outlen: output length
+ *              - uint8_t *in: pointer to input byte array
+ **************************************************/
+static void load64_littleendian(uint64_t *out, const unsigned int outlen,
+                                const uint8_t *in) {
+    unsigned int i, pos = 0;
+    for (i = 0; i < outlen; ++i) {
+        out[i] =
+            ((uint64_t)(in[pos])) | ((uint64_t)(in[pos + 1]) << 8) |
+            ((uint64_t)(in[pos + 2]) << 16) | ((uint64_t)(in[pos + 3]) << 24) |
+            ((uint64_t)(in[pos + 4]) << 32) | ((uint64_t)(in[pos + 5]) << 40) |
+            ((uint64_t)(in[pos + 6]) << 48) | ((uint64_t)(in[pos + 7]) << 56);
+        pos += 8;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// NOISE DISTRIBUTION ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+#ifdef NOISE_D1
+#define RAND_BITS 10 // bits for RND + SIGN
+#define SLEN 2
+#endif
 
-#define RAND_BITS 11 // bits for RND + SIGN
-
-#define SEED_LEN (RAND_BITS * LWE_N / 64) // 64bit seed length
+#define SEED_LEN (RAND_BITS * LWE_N / 64) // 64-bit seed length
 
 // referenced
 // A. Karmakar, S. S. Roy, O. Reparaz, F. Vercauteren and I.
@@ -23,48 +48,38 @@
  * Description: Sample discret Gaussian noise e and add e to op
  *
  * Arguments:   - uint16_t *op: pointer to output vector op
- *              - uint8_t *seed: pointer to input seed of length CRYPTO_BYTES +
- *                               sizeof(size_t))
+ *              - uint8_t *seed: pointer to input seed of length CRYPTO_BYTES+1
  **************************************************/
 int addGaussianError(poly *op, const uint8_t *seed) {
+    unsigned int i = 0, j = 0, k = 0;
     uint64_t seed_temp[SEED_LEN] = {0};
-    shake256((uint8_t *)seed_temp, SEED_LEN * sizeof(uint64_t), seed,
-             CRYPTO_BYTES + sizeof(size_t));
+    uint8_t buf[SEED_LEN * 8] = {0};
+    uint64_t s[SLEN] = {0};
+    uint64_t *x = NULL;
 
-    uint16_t j = 0;
+    shake256(buf, SEED_LEN * 8, seed, CRYPTO_BYTES + 1);
+    load64_littleendian(seed_temp, SEED_LEN, buf);
 
-    for (size_t i = 0; i < LWE_N; i += 64) {
-        uint64_t *x = seed_temp + j;
-        uint64_t s[3];
-        s[0] = (x[0] & x[1] & x[2] & x[3] & x[5] & x[7] & x[8]) |
-               (x[1] & x[2] & x[3] & x[5] & ~x[6] & x[7] & x[9]) |
-               (~x[1] & ~x[2] & ~x[3] & x[6] & x[7] & x[8]) |
-               (~x[1] & ~x[2] & ~x[3] & ~x[5] & ~x[8] & x[9]) |
-               (~x[0] & ~x[2] & ~x[3] & ~x[5] & ~x[8] & x[9]) |
-               (x[4] & x[5] & ~x[6] & x[7] & x[9]) |
-               (x[3] & x[4] & x[8] & ~x[9]) | (~x[5] & x[6] & x[7] & x[8]) |
-               (~x[4] & x[6] & x[7] & x[8]) | (~x[4] & ~x[5] & ~x[8] & x[9]) |
-               (x[5] & x[8] & ~x[9]) | (x[6] & x[8] & ~x[9]) |
-               (x[7] & x[8] & ~x[9]) | (~x[7] & ~x[8] & x[9]) |
-               (~x[6] & ~x[8] & x[9]);
-        s[1] = (x[0] & x[1] & x[4] & ~x[5] & x[6] & x[7] & x[9]) |
-               (x[2] & x[4] & ~x[5] & x[6] & x[7] & x[9]) |
-               (x[3] & x[4] & ~x[5] & x[6] & x[7] & x[9]) |
-               (x[5] & x[6] & x[7] & ~x[8] & x[9]) |
-               (~x[1] & ~x[2] & ~x[3] & x[8] & x[9]) | (~x[7] & x[8] & x[9]) |
-               (~x[6] & x[8] & x[9]) | (~x[5] & x[8] & x[9]) |
-               (~x[4] & x[8] & x[9]);
-        s[2] = (x[1] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]) |
-               (x[2] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]) |
-               (x[3] & x[4] & x[5] & x[6] & x[7] & x[8] & x[9]);
-        for (size_t k = 0; k < 64; ++k) {
-            op->coeffs[i + k] = ((s[0] >> k) & 0x01) |
-                                (((s[1] >> k) & 0x01) << 1) |
-                                (((s[2] >> k) & 0x01) << 2);
-            uint16_t sign = (x[10] >> k) & 0x01;
+    for (i = 0; i < LWE_N; i += 64) {
+        x = seed_temp + j;
+#ifdef NOISE_D1
+        s[0] = (x[0] & x[1] & x[2] & x[3] & x[4] & x[5] & x[7] & ~x[8]) |
+               (x[0] & x[3] & x[4] & x[5] & x[6] & x[8]) |
+               (x[1] & x[3] & x[4] & x[5] & x[6] & x[8]) |
+               (x[2] & x[3] & x[4] & x[5] & x[6] & x[8]) |
+               (~x[2] & ~x[3] & ~x[6] & x[8]) | (~x[1] & ~x[3] & ~x[6] & x[8]) |
+               (x[6] & x[7] & ~x[8]) | (~x[5] & ~x[6] & x[8]) |
+               (~x[4] & ~x[6] & x[8]) | (~x[7] & x[8]);
+        s[1] = (x[1] & x[2] & x[4] & x[5] & x[7] & x[8]) |
+               (x[3] & x[4] & x[5] & x[7] & x[8]) | (x[6] & x[7] & x[8]);
+        for (k = 0; k < 64; ++k) {
+            op->coeffs[i + k] =
+                ((s[0] >> k) & 0x01) | (((s[1] >> k) & 0x01) << 1);
+            uint16_t sign = (x[9] >> k) & 0x01;
             op->coeffs[i + k] = (((-sign) ^ op->coeffs[i + k]) + sign)
                                 << _16_LOG_Q;
         }
+#endif
         j += RAND_BITS;
     }
 
@@ -72,11 +87,11 @@ int addGaussianError(poly *op, const uint8_t *seed) {
 }
 
 void addGaussianErrorVec(polyvec *op, const uint8_t seed[CRYPTO_BYTES]) {
-    uint8_t seed_tmp[CRYPTO_BYTES + sizeof(size_t)] = {0};
+    unsigned int i;
+    uint8_t seed_tmp[CRYPTO_BYTES + 1] = {0};
     cmov(seed_tmp, seed, CRYPTO_BYTES, 1);
-    for (size_t i = 0; i < MODULE_RANK; ++i) {
-        size_t nonce = MODULE_RANK * i;
-        cmov(seed_tmp + CRYPTO_BYTES, (uint8_t *)&nonce, sizeof(size_t), 1);
+    for (i = 0; i < MODULE_RANK; ++i) {
+        seed_tmp[CRYPTO_BYTES] = MODULE_RANK * i;
         addGaussianError(&(op->vec[i]), seed_tmp);
     }
 }
