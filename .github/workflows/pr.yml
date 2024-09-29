@@ -1,0 +1,14 @@
+name: Pull request
+
+permissions:
+  contents: read
+
+on: pull_request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-test:
+    uses: ./.github/workflows/unittest.yml

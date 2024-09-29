@@ -26,3 +26,4 @@ if(NOT CMAKE_BUILD_TYPE MATCHES Release)
   target_link_libraries(${LIB_NAME5}-test gtest_main ${LIB_NAME5})
   gtest_discover_tests(${LIB_NAME5}-test XML_OUTPUT_DIR ctest_res)
 endif()
+
