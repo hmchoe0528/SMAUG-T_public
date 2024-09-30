@@ -37,11 +37,12 @@ int crypto_kem_enc(uint8_t *ctxt, uint8_t *ss, const uint8_t *pk) {
     uint8_t mu[MSG_BYTES] = {0}; // shared secret and seed    // EDIT TiMER
     uint8_t buf[DELTA_BYTES + CRYPTO_BYTES] = {0};
 
-    randombytes(mu, MSG_BYTES);// EDIT TiMER
+    randombytes(mu, MSG_BYTES); // EDIT TiMER
     hash_h(buf, pk, PUBLICKEY_BYTES);
     hash_g(buf, DELTA_BYTES + CRYPTO_BYTES, mu, MSG_BYTES, buf, // EDIT TiMER
            SHA3_256_HashSize);
 
+    memset(ss, 0, CRYPTO_BYTES);
     indcpa_enc(ctxt, pk, mu, buf);
     cmov(ss, buf + DELTA_BYTES, CRYPTO_BYTES, 1);
 
@@ -88,6 +89,7 @@ int crypto_kem_dec(uint8_t *ss, const uint8_t *ctxt, const uint8_t *sk) {
            sk + 2 * MODULE_RANK + SKPOLYVEC_BYTES, T_BYTES, hash_res,
            SHA3_256_HashSize);
 
+    memset(ss, 0, CRYPTO_BYTES);
     cmov(buf + DELTA_BYTES, buf_tmp + DELTA_BYTES, CRYPTO_BYTES, fail);
     cmov(ss, buf + DELTA_BYTES, CRYPTO_BYTES, 1);
     return 0;
