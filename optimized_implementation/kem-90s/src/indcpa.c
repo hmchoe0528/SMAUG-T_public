@@ -78,6 +78,7 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
 
     // Compute a vector r = hwt(delta, H'(pk))
     polyvec r;
+    nttpolyvec rhat[2] = {0};
     memset(&r, 0, sizeof(polyvec));
 
     if (seed == NULL)
@@ -89,8 +90,8 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
     // Compute c1(x), c2(x)
     ciphertext ctxt_tmp;
     memset(&ctxt_tmp, 0, sizeof(ciphertext));
-    computeC1(&(ctxt_tmp.c1), pk_tmp.A, &r);
-    computeC2(&(ctxt_tmp.c2), mu, &pk_tmp.b, &r);
+    computeC1(&(ctxt_tmp.c1), rhat, pk_tmp.A, &r);
+    computeC2(&(ctxt_tmp.c2), mu, &pk_tmp.b, rhat);
 
     save_to_string(ctxt, &ctxt_tmp);
 }
@@ -131,7 +132,7 @@ void indcpa_dec(uint8_t delta[DELTA_BYTES],
             c1_temp.vec[i].coeffs[j] <<= _16_LOG_P;
 
     // Compute delta = (delta + c1^T * s)
-    vec_vec_mult_add(&delta_temp, &c1_temp, &sk_tmp, _16_LOG_P);
+    vec_vec_mult_add_p(&delta_temp, &c1_temp, &sk_tmp);
 
     // Compute delta = 2/p * delta
     for (i = 0; i < LWE_N; ++i) {

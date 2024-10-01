@@ -5,9 +5,6 @@
 #include "consts.h"
 #include "poly.h"
 
-typedef poly nttpoly;
-typedef polyvec nttpolyvec;
-
 /* poly */
 #define poly_ntt POLYMUL_NAMESPACE(_poly_ntt)
 void poly_ntt(nttpoly *r, const poly *a, const int16_t *pdata);
@@ -39,10 +36,14 @@ void polyvec_basemul_acc_montgomery(nttpoly *r, const nttpolyvec *a,
 void polyvec_crt(polyvec *r, const nttpolyvec *a, const nttpolyvec *b);
 
 #define polyvec_matrix_vector_mul POLYMUL_NAMESPACE(_polyvec_matrix_vector_mul)
-void polyvec_matrix_vector_mul(polyvec *t, const polyvec a[KEM_K],
-                               const polyvec *s, int transpose);
+void polyvec_matrix_vector_mul(polyvec *t, nttpolyvec shat[2],
+                               const polyvec a[KEM_K], const polyvec *s,
+                               int transpose);
 
 #define polyvec_iprod POLYMUL_NAMESPACE(_polyvec_iprod)
 void polyvec_iprod(poly *r, const polyvec *a, const polyvec *b);
+
+#define polyvec_iprod_ntt POLYMUL_NAMESPACE(_polyvec_iprod_ntt)
+void polyvec_iprod_ntt(poly *r, const polyvec *a, const nttpolyvec bhat[2]);
 
 #endif // SMAUG_NTT_H

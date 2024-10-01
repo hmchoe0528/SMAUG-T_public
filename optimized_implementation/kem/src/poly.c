@@ -58,7 +58,7 @@ void vec_vec_mult_add_p(poly *r, const polyvec *a, const polyvec *b) {
     poly_add(r, r, &res);
 }
 
-void vec_vec_mult_add_q(poly *r, const polyvec *a, const polyvec *b) {
+void vec_vec_mult_add_q(poly *r, const polyvec *a, const nttpolyvec bhat[2]) {
     unsigned int i, j;
     polyvec al;
     poly res = {0};
@@ -67,7 +67,7 @@ void vec_vec_mult_add_q(poly *r, const polyvec *a, const polyvec *b) {
         for (j = 0; j < LWE_N / 16; ++j)
             al.vec[i].vec[j] = _mm256_srai_epi16(a->vec[i].vec[j], _16_LOG_Q);
 
-    polyvec_iprod(&res, &al, b);
+    polyvec_iprod_ntt(&res, &al, bhat);
     for (j = 0; j < LWE_N / 16; ++j)
         res.vec[j] = _mm256_slli_epi16(res.vec[j], _16_LOG_Q);
 
@@ -84,8 +84,8 @@ void vec_vec_mult_add_q(poly *r, const polyvec *a, const polyvec *b) {
  *              - polyvec *a: pointer to input matrix of polynomials
  *              - polyvec *b: pointer to input vector of polynomials
  **************************************************/
-void matrix_vec_mult_add(polyvec *r, const polyvec a[MODULE_RANK],
-                         const polyvec *b) {
+void matrix_vec_mult_add(polyvec *r, nttpolyvec bhat[2],
+                         const polyvec a[MODULE_RANK], const polyvec *b) {
     unsigned int i, j, k;
     polyvec al[MODULE_RANK];
 
@@ -95,7 +95,7 @@ void matrix_vec_mult_add(polyvec *r, const polyvec a[MODULE_RANK],
                 al[i].vec[j].vec[k] =
                     _mm256_srai_epi16(a[i].vec[j].vec[k], _16_LOG_Q);
     }
-    polyvec_matrix_vector_mul(r, al, b, 1);
+    polyvec_matrix_vector_mul(r, bhat, al, b, 1);
 
     for (i = 0; i < MODULE_RANK; ++i) {
         for (j = 0; j < LWE_N / 16; ++j)
@@ -118,6 +118,7 @@ void matrix_vec_mult_sub(polyvec *r, const polyvec a[MODULE_RANK],
     unsigned int i, j, k;
     polyvec al[MODULE_RANK];
     polyvec res;
+    nttpolyvec bhat[2] = {0};
 
     for (i = 0; i < MODULE_RANK; ++i) {
         for (j = 0; j < MODULE_RANK; ++j)
@@ -127,7 +128,7 @@ void matrix_vec_mult_sub(polyvec *r, const polyvec a[MODULE_RANK],
     }
 
     memset(&res, 0, sizeof(polyvec));
-    polyvec_matrix_vector_mul(&res, al, b, 0);
+    polyvec_matrix_vector_mul(&res, bhat, al, b, 0);
 
     for (i = 0; i < MODULE_RANK; ++i) {
         for (j = 0; j < LWE_N / 16; ++j)

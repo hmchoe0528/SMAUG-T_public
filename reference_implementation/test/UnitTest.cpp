@@ -182,6 +182,9 @@ void testCBD() {
 
 void testMultOneVector() {
     const unsigned count = 10000;
+#if defined(AVX_KECCAK) || defined(AVX_90S)
+    nttpolyvec shat[2];
+#endif
     for (size_t i = 0; i < count; i++) { // check A * [1] ^ (MODULE_RANK)
         uint8_t matbytes[PKPOLYMAT_BYTES];
         polyvec A[MODULE_RANK];
@@ -201,7 +204,11 @@ void testMultOneVector() {
                 }
             }
         }
+#if defined(AVX_KECCAK) || defined(AVX_90S)
+        matrix_vec_mult_add(&vec1, shat, A, &s);
+#else
         matrix_vec_mult_add(&vec1, A, &s);
+#endif
         ASSERT_TRUE(RvecEq(vec1, vec2));
     }
     for (size_t i = 0; i < count; i++) { // check -(A * -[1] ^ (MODULE_RANK))
@@ -244,8 +251,10 @@ void testMultOneVector() {
                 sum.coeffs[k] += vec1.vec[j].coeffs[k];
             }
         }
-#ifdef AVX_KECCAK
-        vec_vec_mult_add_q(&res, &vec1, &s);
+#if defined(AVX_KECCAK) || defined(AVX_90S)
+        polyvec_ntt(&shat[0], &s, PDATA0);
+        polyvec_ntt(&shat[1], &s, PDATA1);
+        vec_vec_mult_add_q(&res, &vec1, shat);
 #else
         vec_vec_mult_add(&res, &vec1, &s, _16_LOG_Q);
 #endif
@@ -253,11 +262,6 @@ void testMultOneVector() {
     }
 }
 
-void print_poly(int16_t *x) {
-    for (int i = 0; i < LWE_N; ++i)
-        printf("%d ", x[i]);
-    printf("\n");
-}
 void testMultAddSub() {
     const unsigned count = 1;
     for (size_t i = 0; i < count; i++) {
@@ -282,7 +286,12 @@ void testMultAddSub() {
 
         polyvec res;
         memset(&res, 0, sizeof res);
+#if defined(AVX_KECCAK) || defined(AVX_90S)
+        nttpolyvec shat;
+        matrix_vec_mult_add(&res, &shat, A, &sk);
+#else
         matrix_vec_mult_add(&res, A, &sk);
+#endif
         for (size_t l = 0; l < MODULE_RANK; ++l) {
             for (size_t k = 0; k < LWE_N; ++k)
                 vec1.vec[l].coeffs[k] += res.vec[l].coeffs[k];

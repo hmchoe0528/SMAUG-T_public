@@ -1,5 +1,5 @@
-#include "align.h"
 #include "indcpa.h"
+#include "align.h"
 #include "cbd.h"
 #include "randombytes.h"
 
@@ -28,7 +28,9 @@ void genRx_vec(polyvec *r, const uint8_t *input) {
 #if DELTA_BYTES != 32
 #error "This function assumes DELTA_BYTES to be 32."
 #endif
-    shake256x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, CBDSEED_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs, DELTA_BYTES + 1);
+    shake256x4(buf[0].coeffs, buf[1].coeffs, buf[2].coeffs, buf[3].coeffs,
+               CBDSEED_BYTES, buf[0].coeffs, buf[1].coeffs, buf[2].coeffs,
+               buf[3].coeffs, DELTA_BYTES + 1);
 #if MODULE_RANK > 4
 #error "This function works only up to MODULE_RANK = 4."
 #endif
@@ -97,6 +99,7 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
 
     // Compute a vector r = hwt(delta, H'(pk))
     polyvec r;
+    nttpolyvec rhat[2] = {0};
     memset(&r, 0, sizeof(polyvec));
 
     if (seed == NULL)
@@ -108,8 +111,8 @@ void indcpa_enc(uint8_t ctxt[CIPHERTEXT_BYTES],
     // Compute c1(x), c2(x)
     ciphertext ctxt_tmp;
     memset(&ctxt_tmp, 0, sizeof(ciphertext));
-    computeC1(&(ctxt_tmp.c1), pk_tmp.A, &r);
-    computeC2(&(ctxt_tmp.c2), mu, &pk_tmp.b, &r);
+    computeC1(&(ctxt_tmp.c1), rhat, pk_tmp.A, &r);
+    computeC2(&(ctxt_tmp.c2), mu, &pk_tmp.b, rhat);
 
     save_to_string(ctxt, &ctxt_tmp);
 }
