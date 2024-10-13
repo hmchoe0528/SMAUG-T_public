@@ -18,6 +18,9 @@ PQCgenKAT_smaug-t1-90s
 PQCgenKAT_smaug-t3-90s
 PQCgenKAT_smaug-t5-90s
 
-timer-main
-timer-speed
-PQCgenKAT_timer
+TiMER-main
+TiMER-speed
+PQCgenKAT_TiMER
+TiMER-main-90s
+TiMER-speed-90s
+PQCgenKAT_TiMER-90s
