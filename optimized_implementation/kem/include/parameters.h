@@ -18,6 +18,9 @@
 #define LOG_P2 5                // ciphertext2 modulus
 #define HS 70                  // Hamming weight of coefficient vector s
 
+#define RD_ADD 0x80             // 2^(15 - LOG_P)
+#define RD_AND 0xff00           // 2^16 - 2^(16 - LOG_P)
+
 #define RD_ADD2 0x0400          // 2^(15 - LOG_P2)
 #define RD_AND2 0xf800          // 2^16 - 2^(16 - LOG_P2)
 
@@ -34,8 +37,11 @@
 #define LOG_P2 4                // ciphertext2 modulus
 #define HS 88                  // Hamming weight of coefficient vector s
 
-#define RD_ADD2 0x0080          // 2^(15 - LOG_P2)
-#define RD_AND2 0xff00          // 2^16 - 2^(16 - LOG_P2)
+#define RD_ADD 0x40             // 2^(15 - LOG_P)
+#define RD_AND 0xff80           // 2^16 - 2^(16 - LOG_P)
+
+#define RD_ADD2 0x0800          // 2^(15 - LOG_P2)
+#define RD_AND2 0xf000          // 2^16 - 2^(16 - LOG_P2)
 
 #elif SMAUG_MODE == 5
 #define SMAUG_NAMESPACE(s) cryptolab_smaug5_##s
@@ -50,13 +56,12 @@
 #define LOG_P2 7                // ciphertext2 modulus
 #define HS 87                  // Hamming weight of coefficient vector s
 
-#define RD_ADD2 0x0200          // 2^(15 - LOG_P2)
-#define RD_AND2 0xfc00          // 2^16 - 2^(16 - LOG_P2)
+#define RD_ADD 0x40             // 2^(15 - LOG_P)
+#define RD_AND 0xff80           // 2^16 - 2^(16 - LOG_P)
+
+#define RD_ADD2 0x0100          // 2^(15 - LOG_P2)
+#define RD_AND2 0xfe00          // 2^16 - 2^(16 - LOG_P2)
 #endif
-
-
-#define RD_ADD 0x80             // 2^(15 - LOG_P)
-#define RD_AND 0xff00           // 2^16 - 2^(16 - LOG_P)
 
 #define LOG_T 1                     // plaintext modulus
 #define T (1 << LOG_T)              // binary
