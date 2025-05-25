@@ -37,23 +37,23 @@ $ ./PQCgenKAT_smaug-t1
 
 # Citing
 
-A conference version for SMAUG is available:
+A conference version for SMAUG is [available](https://doi.org/10.1007/978-3-031-53368-6_7):
 
     Cheon, J.H., Choe, H., Hong, D., Yi, M. (2024). SMAUG: Pushing Lattice-Based Key Encapsulation Mechanisms to the Limits. 
     In: Carlet, C., Mandal, K., Rijmen, V. (eds) Selected Areas in Cryptography – SAC 2023. SAC 2023. 
     Lecture Notes in Computer Science, vol 14201. Springer, Cham. https://doi.org/10.1007/978-3-031-53368-6_7
 
-To cite SMAUG-T specifications, possibly with or without versions: 
+To cite SMAUG-T specifications: 
 
     Cheon, J.H., Choe, H., Choi J., Hong, D., Hong, J., Jung, C., Kang, H., Lee, J., Lim, S., Park, A., Park, S., Seong, H., Shin, J. (2024). 
-    SMAUG-T: Algorithm Specifications and Supporting Documentation v3.0.
+    SMAUG-T: Algorithm Specifications and Supporting Documentation v4.0. 
 
 Or via BibTeX: 
 
-    @techreport{SMAUG-T-v3.0,
+    @techreport{SMAUG-T-v4.0,
     author = {Cheon, Jung Hee and Choe, Hyeongmin and Choi, Joongeun and Hong, Dongyeon and Hong, Jeongdae and Jung, Chi-Gon and Kang, 
     Honggoo and Lee, Janghyun and Lim, Seonghyuck and Park, Aesun and Park, Seunghwan and Seong, Hyoeun and Shin, Junbum},
-    title = {SMAUG-T: Algorithm Specifications and Supporting Documentation v3.0},
+    title = {SMAUG-T: Algorithm Specifications and Supporting Documentation v4.0},
     year = {2024},
     }
 
