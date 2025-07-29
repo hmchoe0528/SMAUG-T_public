@@ -86,7 +86,7 @@ int crypto_kem_dec(uint8_t *ss, const uint8_t *ctxt, const uint8_t *sk) {
 
     hash_h(hash_res, ctxt, CIPHERTEXT_BYTES);
     hash_g(buf_tmp, DELTA_BYTES + CRYPTO_BYTES,
-           sk + 2 * MODULE_RANK + SKPOLYVEC_BYTES, T_BYTES, hash_res,
+           sk + PKE_SECRETKEY_BYTES, T_BYTES, hash_res,
            SHA3_256_HashSize);
 
     memset(ss, 0, CRYPTO_BYTES);
