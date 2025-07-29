@@ -168,10 +168,9 @@ def meet_lwe(n, q, w):
 #     tm0 = meet_lwe_rep0(n, q, w)
     tm1 = meet_lwe_rep1_for(n, q, w)
     tm2 = meet_lwe_rep2_for(n, q, w)
-    if tm1[0][0] > tm2[0][0]:
-        return tm2[0]
-    else: 
-        return tm1[0]
+
+    return tm1[0], tm2[0]
+
 
 # ###################
 # # Parameters Sets #

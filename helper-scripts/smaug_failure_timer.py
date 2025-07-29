@@ -30,19 +30,21 @@ def prob_final_error(sig, n, k, q, p, pp, numCBD, hs, isTimer=False):
         D_e = {0: 340.0/1024, 1: 241.0/1024, -1: 241.0/1024, 2: 85.0/1024, -2: 85.0/1024, 3: 15.0/1024, -3:15.0/1024, 4: 1.0/1024, -4: 1.0/1024}
     elif sig==1.45:
         D_e = {0: 562.0/2048, 1:444.0/2048, 2:218.0/2048, 3: 67.0/2048, 4:13.0/2048, 5: 2.0/2048, -1:444.0/2048, -2:218.0/2048, -3: 67.0/2048, -4:13.0/2048, -5: 2.0/2048}
-    
-    # LWR secret for ctxt (CBD or modifiedCBD)
-    if (numCBD != 68) & (numCBD != 58):
-        D_r = build_centered_binomial_law(numCBD)
-    # (previously 0)
-    elif numCBD==68:
-        # 0 with 6/8 = 3/4, +-1 with 1/8
-        D_r = {0: 0.75, 1: 0.125, -1: 0.125}
-    # (previously -1)
+
+    # LWR secret for ctxt (SparseCBD or CBD)
+    if numCBD == 48:
+        D_r = {0: 0.5, 1: 0.25, -1: 0.25}
     elif numCBD == 58:
         # 0 with 5/8, +-1 with 3/16
         D_r = {0: 0.625, 1: 0.1875, -1: 0.1875}
-    
+    elif numCBD == 68:
+        # 0 with 6/8 = 3/4, +-1 with 1/8
+        D_r = {0: 0.75, 1: 0.125, -1: 0.125}
+    elif numCBD < 20:
+        D_r = build_centered_binomial_law(numCBD)
+    else:
+        print("Err: numCBD too big")
+
     # LWR error for ctxt    (ModSwitch q->p)
     D_e1 = build_mod_switching_error_law(q, p)
     
