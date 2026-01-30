@@ -1,5 +1,15 @@
+# [DEPRECATED] SMAUG-T Public Library
+
+> [!CAUTION]
+> **This repository is no longer maintained.**
+> It remains available for archival purposes only.
+> Please use the updated version at the new official repository:
+> **👉 [CryptoLabInc/SMAUG-T](https://github.com/CryptoLabInc/SMAUG-T)**
+
+---
+
 # SMAUG-T_public
-SMAUG-T reference code (public release). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-t).
+SMAUG-T reference code (for public release during KpqC Competition). Visit our [official website](https://www.kpqc.cryptolab.co.kr/smaug-t).
 
 
 # Build
